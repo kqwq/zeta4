@@ -1,0 +1,22 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js"
+  },
+  "type": "module",
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "countries-and-timezones": "^3.3.0",
+    "country-flags-svg": "^1.1.1",
+    "dotenv": "^10.0.0",
+    "fs": "0.0.1-security",
+    "node-fetch": "^3.0.0",
+    "node-turn": "github:kqwq/node-turn",
+    "simple-peer": "^9.11.0",
+    "wrtc": "^0.4.7"
+  }
+}

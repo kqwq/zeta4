@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Progress</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.css"
+    integrity="sha512-iLYuqv+v/P4u9erpk+KM83Ioe/l7SEmr7wB6g+Kg1qmEit8EShDKnKtLHlv2QXUp7GGJhmqDI+1PhJYLTsfb8w=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/simple-peer/9.11.0/simplepeer.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.js"
+    integrity="sha512-2PRgAav8Os8vLcOAh1gSaDoNLe1fAyq8/G3QSdyjFFD+OqNjLeHE/8q4+S4MEZgPsuo+itHopj+hJvqS8XUQ8A=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.5.0/lib/xterm-addon-fit.min.js"></script>
+  <style>
+    body {
+      background-color: #fafafa;
+    }
+    .toolbar {
+      background-color: rgba(0, 0, 0, 0.1);
+      position: absolute;
+      top: 0px;
+      left: 0px;
+      padding: 1px;
+      width: 100%;
+      font-size: 15px;
+    }
+    #kam-views a {
+      color: navy;
+    }
+    #kam-views a.active {
+      font-weight: bold;
+      pointer-events: none;
+    }
+    #kam-views a:hover {
+      color: orangered;
+    }
+    #kam-username {
+      color: gray;
+    }
+    #game-list {
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+    }
+    .game-item {
+      margin: 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      width: 200px;
+      height: 200px;
+      display: flex;
+      flex-direction: column;
+    }
+    .game-item-title {
+      font-size: 20px;
+      font-weight: bold;
+      color: gray;
+      font-family: monospace;
+      text-align: left;
+    }
+    .game-item-title:hover {
+      color: #555;
+    }
+    .game-item-actions {
+      /* Pin items to the bottom of div */
+      display: flex;
+      flex-direction: row;
+      justify-content: space-around;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+    #editor {
+      position: absolute;
+      top: 25px;
+      right: 0;
+      bottom: 0;
+      left: 0;
+    }
+    #editor-options {
+      position: absolute;
+      top: 40px;
+      right: 30px;
+      width: 100px;
+      height: 35px;
+      padding: 2px;
+      background-color: rgba(11, 0, 24, 0.486)
+    }
+    #editor-options button {
+      padding: 3px;
+    }
+    #view-stdout {
+      z-index: 100;
+    }
+  </style>
+</head>
+<body>
+  <!-- Toolbar pinned to the top that contains the current directory (page) and view optioons when page is "home-game-project-edit" -->
+  <div class="toolbar">
+    <div class="col md-12">
+      <div class="float-left">
+        <span id="kam-status">Connecting<span class="loading"></span></span>
+        <span id="kam-breadcrumbs"> | Games > test > Editing server.js</span>
+      </div>
+      <div class="float-right">
+        <span id="kam-views">
+          <a href="javascript:void(0)" id='html' onclick="chView('html')">html</a> |
+          <a href="javascript:void(0)" id='html' onclick="chView('view')">view</a> |
+          <a href="javascript:void(0)" id='server' onclick="chView('server')">server</a> |
+          <a href="javascript:void(0)" id='stdout' onclick="chView('stdout')">stdout</a>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Home page with cool spinning globe in background -->
+  <div class="container page" id="home">
+    <h3>Khan Academy Metaverse Home</h3>
+    <a href="javascript:void(0)" class="btn btn-primary" onclick="chPage('home-games')">Browse Games</a>
+    <a href="javascript:void(0)" class="btn btn-primary" onclick="createProject()">Create Game</a>
+    <a href="javascript:void(0)" class="btn btn-secondary" onclick="chPage('home-send')">Test Server</a>
+  </div>
+
+  <div class="container page" id="home-send">
+    <input style="width:75%" id="content" type="text" onkeydown="if(event.keyCode == 13)send(this.value)" />
+    <input type="button" value="Send" id="send" onclick="send(document.getElementById('content').value)" />
+    <br>
+    <p>Server's response: <span id="output"></span></p>
+  </div>
+
+  <div class="container page" id="home-games">
+    <h3>Games</h3>
+    <button onclick="getProjects()" class="btn btn-dark btn-sm">Refresh</button>
+    <div id="game-list"> </div>
+  </div>
+
+  <div class="container page" id="home-games-project">
+    <h4 id="kam-proj-title" contenteditable="true">Project</h4>
+    <p id="kam-proj-desc" contenteditable="true">desc</p><br>
+    Version: <p id="kam-proj-version" contenteditable="true">v</p><br>
+    Author: <b id="kam-proj-author">a</b>
+    <button class="btn btn-success" onclick="saveProjectChanges()">Save Changes</button>
+    <button class="btn btn-success" onclick="joinProject()">Join / test</button>
+    <button class="btn btn-dark" onclick="editProject()">Edit code</button>
+    <button class="btn btn-danger" onclick="deleteProject()">Delete</button>
+  </div>
+
+  <div class="container page" id="home-games-project-loading">
+    <h4>Getting things ready...</h4>
+  </div>
+
+  <div class="page" id="home-games-project-edit">
+    <div id="view-server">
+      <div id="editor">function foo(items) {
+        var x = "All this is syntax highlighted";
+        return x;
+        }</div>
+    </div>
+    <div id="view-html" class="container">
+      html view
+    </div>
+
+    <div id="editor-options">
+      <button class="btn btn-sm btn-success" id="editor-run" onclick="runServerCode()">Run</button>
+      <button class="btn btn-sm btn-danger" id="editor-stop" onclick="stopServerCode()">Stop</button>
+    </div>
+  </div>
+
+  <div class="container page" id="home-games-project-join">
+    <h4>Project join</h4>
+  </div>
+
+  <div id="view-stdout">
+
+  </div>
+
+  <!-- Ace cdn from jsDelivr -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js" type="text/javascript"
+    charset="utf-8"></script>
+
+  <script type>{
+      { }// highlighting fixed in vscode
+
+
+      // Set KA editor
+      function putCode(code) {
+        console.log(`*puts code in editor*`, code);
+        //top.postMessage(JSON.stringify({ code }), "*")
+      }
+
+      // Views setup
+      var view = 'server'
+      function chView(newView) {
+        var views = document.getElementById('kam-views').getElementsByTagName('a');
+        for (var i = 0; i < views.length; i++) {
+          views[i].className = '';
+          document.getElementById("view-" + views[i].id).style.display = 'none';
+        }
+        document.getElementById(newView).className = 'active';
+        document.getElementById("view-" + newView).style.display = 'block';
+
+        terminalActive = false;
+        if (newView == 'html') {
+          putCode(projectClientCode)
+        } else if (newView == 'server') {
+          // nothing
+        } else if (newView == 'stdout') {
+          terminalActive = true;
+        }
+        view = newView;
+      }
+
+      // Create/set project
+      var projects = []
+      var myProject = {}
+      var projectServerCode = ""
+      var projectClientCode = ""
+      function getProjects() {
+        send("!deno-get-projects")
+        document.getElementById('game-list').innerHTML = '<div>Loading<span class="loading"></span></div>'
+      }
+      function populateProjects() {
+        let denoListHtml = ""
+        for (let p of projects) {
+          denoListHtml += `
+<div class="game-item">
+  <a class="game-item-title" href="javascript:void(0)" onclick="aboutProject('${p.name}')">
+    ${p.name}
+  </a>
+  <div class="game-item-description">
+    <p>
+      ${p.desc}
+    </p>
+  </div>
+  <div class="game-item-actions">
+    <a href="javascript:void(0)" class="btn btn-success" onclick="joinProject('${p.name}')">Join</a>
+    <a href="javascript:void(0)" class="btn btn-dark" onclick="editProject('${p.name}')">Edit</a>
+  </div>
+</div>
+      `
+        }
+        document.getElementById('game-list').innerHTML = denoListHtml
+      }
+      function createProject() {
+        chPage('home-games-project-loading');
+        send("!deno-create-project")
+      }
+      function aboutProject(projName) {
+        myProject = projName ? projects.find(p => p.name == projName) : myProject;
+        // Update html
+        document.getElementById('kam-proj-title').textContent = myProject.name;
+        document.getElementById('kam-proj-desc').textContent = myProject.desc;
+        document.getElementById('kam-proj-version').textContent = myProject.version;
+        document.getElementById('kam-proj-author').textContent = myProject.author;
+        chPage('home-games-project');
+
+      }
+      function joinProject(projName) {
+        alert("Work in progress")
+        //projectName = projName || projectName;
+        chPage('home-games-project-loading');
+        send("!deno-get-join " + myProject.name)
+        chPage('home-games-project-join')
+      }
+      function saveProjectChanges() {
+        function alphanumericOrDashFilter(str) {
+          return str.replace(/\W/g, '-').replace(/[^a-z0-9-]/gi, '');
+        }
+        myProject = {
+          prevName: myProject.name,
+          name: alphanumericOrDashFilter(document.getElementById('kam-proj-title').textContent), // Sanitize name
+          desc: document.getElementById('kam-proj-desc').textContent.slice(0, 1024), // Shorten
+          version: document.getElementById('kam-proj-version').textContent.slice(0, 20),
+          author: myProject.author
+        }
+        aboutProject();
+        if (projects.find(p => p.name == myProject.name)) {
+          alert("Project name already exists")
+        } else {
+          send("!deno-update-info " + JSON.stringify(myProject))
+        }
+      }
+      function editProject(projName) {
+        myProject = projName ? projects.find(p => p.name == projName) : myProject;
+        if (!myProject) {
+          alert("Project not found")
+          return
+        }
+        aboutProject();
+        chPage('home-games-project-edit');
+        projectServerCode = "Loading..."
+        projectClientCode = "Loading...";
+        editor.getSession().setValue("Loading...");
+        send("!deno-get-code " + myProject.name);
+      }
+      function deleteProject() {
+        let r = confirm("Are you sure you want to delete this project?")
+        if (r) {
+          send("!deno-delete-project " + myProject.name)
+          chPage('home-games');
+        }
+      }
+
+      function runServerCode() {
+        chView('stdout');
+        let serverCode = editor.getSession().getValue();
+        let obj = {
+          project: myProject.name,
+          code: serverCode
+        }
+        send("!deno-run " + JSON.stringify(obj));
+      }
+      function stopServerCode() {
+        send("!deno-kill")
+      }
+
+
+      // Editor setup
+      var editor
+      function initEditor() {
+        editor = ace.edit("editor");
+        editor.setTheme("ace/theme/monokai");
+        editor.session.setMode("ace/mode/javascript");
+      }
+      initEditor()
+
+      // Page setup
+      var page = "home"
+      function chPage(newPage) {
+        function breadcrumbTextView(s) {
+          s = s[0].toUpperCase() + s.slice(1)
+          return s.replace("Edit", "edit").split("-").map(s => s.replace("Project", myProject.name))
+        }
+        document.getElementById(page).style.display = "none";
+        page = newPage
+        document.getElementById(page).style.display = "block";
+        let fullPath = ""
+        document.getElementById("kam-breadcrumbs").innerHTML = page.split("-").map(s => {
+          fullPath += s + "-"
+          return `<a href="javascript:void(0)" onclick='chPage("${fullPath.slice(0, fullPath.length - 1)}")'>${breadcrumbTextView(s)}</a>`
+        }).join(" &gt; ")
+
+        // Special rules
+        if (page == "home-games-project-edit") {
+          document.getElementById("kam-views").style.display = "inline";
+          chView("server");
+        } else {
+          document.getElementById("kam-views").style.display = "none";
+          terminalActive = false;
+          document.getElementById("view-stdout").style.display = "none";
+
+        }
+
+      }
+      document.querySelectorAll(".page").forEach(v => v.style.display = "none") // Hide all pages
+      setTimeout(() => chPage("home"), 0)
+
+
+      function send(ele) {
+        if (!isConnected) {
+          alert("You are not connected")
+          return
+        }
+        peer.send(ele)
+      }
+
+      var terminalActive = false
+      function onRecieve(data) {
+        console.log("%c" + data, 'background: #000; color: #ff00ff')
+        var firstArg, secondArg
+        if (data.includes(" ")) {
+          firstArg = data.substring(0, data.indexOf(" "))
+          secondArg = data.substring(data.indexOf(" ") + 1)
+        } else {
+          firstArg = data
+          secondArg = ""
+        }
+        if (firstArg == "deno-terminal-end") {
+          term.nextLine()
+        } else if (terminalActive || data.startsWith("~")) {
+          if (data.startsWith("~")) {
+            term.write(data.substring(1).replace(/\n/g, "\r\n"))
+          } else {
+            term.write(data.replace(/\n/g, "\r\n"))
+            term.nextLine()
+          }
+        } else if (firstArg == "geo") {
+          let geoData = JSON.parse(data.slice(4))
+          document.getElementById("output").innerHTML =
+            `<h3>You live in ${geoData.country}</h3>
+              <img src="${geoData.flag}" width="100px"/>
+              <p>Timezone: ${geoData.tz}</p>
+              `;
+        } else if (firstArg == 'deno-set-projects') {
+          projects = JSON.parse(secondArg)
+          populateProjects()
+        } else if (firstArg == 'deno-set-server') {
+          projectServerCode = secondArg
+          editor.getSession().setValue(projectServerCode)
+        } else if (firstArg == 'deno-set-client') {
+          projectClientCode = secondArg
+        } else if (firstArg == 'deno-add-project') {
+          myProject = JSON.parse(secondArg)
+          if (myProject.prevName) {
+            projects = projects.filter(p => p.name != myProject.prevName)
+          }
+          projects.push(myProject)
+          populateProjects()
+          aboutProject()
+        } else if (firstArg == 'deno-remove-project') {
+          removedProjectName = secondArg
+          projects = projects.filter(p => p.name != removedProjectName)
+          populateProjects()
+        }
+        else {
+          document.getElementById("output").innerHTML = data
+        }
+      }
+
+      var serverIp = "192.168.1.176"
+      var linkId = "5918360080531456"
+      
+      // Create 4-byte fingerprint and use that as answer line number
+      var randomFingerprint = Math.random().toString(16).substring(2, 6)
+      var answerLineNumber = parseInt(randomFingerprint.slice(0, 2), 16)
+      var peer
+      var isConnected = false
+
+      connectToServer()
+      function connectToServer() {
+        peer = new SimplePeer({
+          initiator: true,
+          trickle: false
+        }).on("signal", function (data) {
+          console.log("%cCopy for manual input", "background: #000; font-size: x-large")
+          console.log("%c" + "SDP_" + randomFingerprint + "_" + btoa(data.sdp), 'background: #000; color: #00ff00')
+          sendSdpPackets(JSON.stringify(data))
+        }).on("connect", function () {
+          isConnected = true
+          document.getElementById("kam-status").textContent = "Connected"
+          setTimeout(() => getProjects(), 1000)
+        }).on("data", function (data) {
+          onRecieve(data.toString())
+        }).on("close", function () {
+          isConnected = false
+          document.getElementById("kam-status").textContent = "Disconnected"
+          console.log("close")
+        }).on("error", function (err) {
+          document.getElementById("kam-status").textContent = "Error - open console";
+          console.log("error", err)
+        })
+
+        function sendSdpPackets(content) {
+          // PACKET FORMAT: 37cfa9{"type":"offer","sdp":"v=0\r\no...
+          /** Breakdown
+           *  - (1 char)    packet index (3=4th packet in hex)
+           *  - (1 char)    number of packets (7=8 in hex), in case packets are received out of order
+           *  - (4 chars)   packet fingerprint/identifier (example: cfa9)
+           *  - (494 chars) packet content
+           * 
+           * In technical terms this has nothing to do with a network packet
+           */
+          let hex = "0123456789abcdef"
+          let packetSize = 494
+          if (content.length >= packetSize * 16) {
+            document.getElementById("kam-status").textContent = "SDP offer too long to send";
+            console.error("SDP offer too long")
+            return
+          }
+
+          // Split up sdp data into up to 16 packets
+          let packets = []
+          for (let i = 0; i < content.length; i += packetSize) {
+            packets.push(content.substr(i, packetSize))
+          }
+
+          // Send packets with header and index
+          for (let i = 0; i < packets.length; i++) {
+            let packet = hex[i] + hex[packets.length] + randomFingerprint + packets[i]
+            sendToTurnServer(packet)
+          }
+          console.log(`Sent ${packets.length} packets with fingerprint ${randomFingerprint}`)
+
+          setTimeout(attemptConnection, 2000)
+        }
+
+        function sendToTurnServer(content) {
+          const pc = new RTCPeerConnection({
+            iceServers: [{
+              urls: [`turn:${serverIp}:3478`],
+              username: content,
+              credential: "1"
+            }],
+            iceCandidatePoolSize: 1
+          })
+          setTimeout(() => pc.close(), 1000)
+        }
+      }
+
+      let connectionAttempts = 0
+      function attemptConnection(forceAttempt) {
+        parent.forceAttempt = forceAttempt
+        console.log('Attempting to connect...');
+        let url = `https://www.khanacademy.org/api/internal/scratchpads/${linkId}?callback=?`
+        parent.$.getJSON(url, data => {
+          if (data == null) {
+            document.getElementById("kam-status").innerHTML = "Link Program deleted - contact Squishy.";
+            console.error("Connection error: Link Program was likely deleted. Please contact Squishy.")
+            return
+          }
+          let linkProgramCode = data.revision.code.split('\n')
+          let linkLastUpdated = new Date(data.revision.created)
+          let nowDate = new Date()
+          let diff = nowDate - linkLastUpdated
+          let diffSeconds = Math.floor(diff / 1000)
+          let diffHours = Math.floor(diff / (1000 * 60 * 60))
+
+          // Detect a signal answer to my offer
+
+          let serverOffer = linkProgramCode[answerLineNumber - 1]
+          if ((!serverOffer || !serverOffer.includes('answer=')) && !parent.forceAttempt) {
+            connectionAttempts++
+            if (connectionAttempts > 6) {
+              document.getElementById('kam-status').textContent = "Server offline - contact Squishy."
+              console.error("Connection error: Link Program is unresponsive. Please contact Squishy.")
+              return
+            }
+            setTimeout(attemptConnection, 2000) // Wait 2 seconds and try again
+            return
+          }
+
+          serverOffer = serverOffer.split(/\=(.+)/)[1] // Remove offerAnswer=
+          peer.signal(serverOffer)
+        })
+
+      }
+
+      // Update loading ellipsis
+      setInterval(() => {
+        document.querySelectorAll(".loading").forEach(ele => {
+          ele.innerHTML += "."
+          if (ele.innerHTML.length > 3) {
+            ele.innerHTML = ""
+          }
+        })
+      }, 500)
+
+
+    }
+
+  </script>
+  <script type>
+    var term = new Terminal({
+      cursorBlink: true,
+      cols: 65,
+      rows: 19,
+    });
+    var fitAddon = new FitAddon.FitAddon();
+    term.loadAddon(fitAddon);
+    fitAddon.fit();
+    term.open(document.getElementById('view-stdout'));
+    term.nextLine = function () {
+      term.write('\r\nmetaverse $ ');
+    };
+    term.prompt = () => {
+      term.write('\n')
+      if (term.currLine == "cls\r" || term.currLine == "clear\r") {
+        term.clear()
+      } else if (term.currLine == "help\r") {
+        term.nextLine()
+      } else {
+        send(term.currLine.toString().trim())
+      }
+      term.currLine = "";
+    };
+    term.currLine = "";
+    term.write('metaverse $ ')
+    term.onKey(e => {
+      term.currLine += e.key;
+      term.write(e.key);
+      if (e.keyCode == 8) { // Backspace
+        term.write('\b \b');
+        term.currLine = term.currLine.slice(0, -1);
+      } else if (e.key == '\r') { // Enter
+        term.prompt()
+      }
+    })
+    // Set theme to xterm.js
+    term.setOption('theme', {
+  "name": "Atom",
+  "black": "#000000",
+  "red": "#fd5ff1",
+  "green": "#87c38a",
+  "yellow": "#ffd7b1",
+  "blue": "#85befd",
+  "purple": "#b9b6fc",
+  "cyan": "#85befd",
+  "white": "#e0e0e0",
+  "brightBlack": "#000000",
+  "brightRed": "#fd5ff1",
+  "brightGreen": "#94fa36",
+  "brightYellow": "#f5ffa8",
+  "brightBlue": "#96cbfe",
+  "brightPurple": "#b9b6fc",
+  "brightCyan": "#85befd",
+  "brightWhite": "#e0e0e0",
+  "background": "#161719",
+  "foreground": "#c5c8c6",
+  "selectionBackground": "#444444",
+  "cursorColor": "#d0d0d0"
+});
+
+
+
+    
+
+    document.getElementById('view-stdout').style.display = 'none';
+  </script>
+  <script></script>
+</body>
+
+</html>

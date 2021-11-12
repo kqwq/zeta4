@@ -1,0 +1,6 @@
+*/.env
+*/node_modules
+server/config.json
+server/ipdb.json
+server/deno
+server/ManualInput.txt
