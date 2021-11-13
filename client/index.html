@@ -5,20 +5,63 @@
   <meta charset="utf-8">
   <title>Progress</title>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.css"
-    integrity="sha512-iLYuqv+v/P4u9erpk+KM83Ioe/l7SEmr7wB6g+Kg1qmEit8EShDKnKtLHlv2QXUp7GGJhmqDI+1PhJYLTsfb8w=="
-    crossorigin="anonymous" referrerpolicy="no-referrer" />
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/simple-peer/9.11.0/simplepeer.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.js"
-    integrity="sha512-2PRgAav8Os8vLcOAh1gSaDoNLe1fAyq8/G3QSdyjFFD+OqNjLeHE/8q4+S4MEZgPsuo+itHopj+hJvqS8XUQ8A=="
-    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.5.0/lib/xterm-addon-fit.min.js"></script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/globe.gl@2.22.8/dist/globe.gl.min.js"></script>
+
+  <!-- Ace cdn from jsDelivr -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js" type="text/javascript"
+    charset="utf-8"></script>
   <style>
-    body {
-      background-color: #fafafa;
+
+    .btn-glass {
+      /* Translucent background, white text, set border, rounded corners */
+      pointer-events: auto;
+      background-color: rgba(255, 255, 255, 0.1);
+      color: white;
+      border: 2px solid white;
+      border-radius: 5px;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 16px;
+      font-weight: bold;
+      padding: 10px;
+      margin: 24px;
+      cursor: pointer;
+      z-index: 2;
+      /* Make text non-selectable */
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      -khtml-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
     }
+    button:hover {
+      background-color: rgba(255, 255, 255, 0.4);
+    }
+
+    .btn-container {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      /* Align buttons to center */
+      text-align: center;
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      pointer-events: none;
+    }
+
     .toolbar {
       background-color: rgba(0, 0, 0, 0.1);
       position: absolute;
@@ -27,25 +70,32 @@
       padding: 1px;
       width: 100%;
       font-size: 15px;
+      z-index: 10;
     }
+
     #kam-views a {
       color: navy;
     }
+
     #kam-views a.active {
       font-weight: bold;
       pointer-events: none;
     }
+
     #kam-views a:hover {
       color: orangered;
     }
+
     #kam-username {
       color: gray;
     }
+
     #game-list {
       margin: 0 auto;
       display: flex;
       flex-wrap: wrap;
     }
+
     .game-item {
       margin: 10px;
       padding: 10px;
@@ -56,6 +106,7 @@
       display: flex;
       flex-direction: column;
     }
+
     .game-item-title {
       font-size: 20px;
       font-weight: bold;
@@ -63,9 +114,11 @@
       font-family: monospace;
       text-align: left;
     }
+
     .game-item-title:hover {
       color: #555;
     }
+
     .game-item-actions {
       /* Pin items to the bottom of div */
       display: flex;
@@ -74,6 +127,7 @@
       align-items: flex-end;
       flex-wrap: wrap;
     }
+
     #editor {
       position: absolute;
       top: 25px;
@@ -81,6 +135,7 @@
       bottom: 0;
       left: 0;
     }
+
     #editor-options {
       position: absolute;
       top: 40px;
@@ -90,14 +145,17 @@
       padding: 2px;
       background-color: rgba(11, 0, 24, 0.486)
     }
+
     #editor-options button {
       padding: 3px;
     }
+
     #view-stdout {
       z-index: 100;
     }
   </style>
 </head>
+
 <body>
   <!-- Toolbar pinned to the top that contains the current directory (page) and view optioons when page is "home-game-project-edit" -->
   <div class="toolbar">
@@ -118,19 +176,16 @@
   </div>
 
   <!-- Home page with cool spinning globe in background -->
-  <div class="container page" id="home">
-    <h3>Khan Academy Metaverse Home</h3>
-    <a href="javascript:void(0)" class="btn btn-primary" onclick="chPage('home-games')">Browse Games</a>
-    <a href="javascript:void(0)" class="btn btn-primary" onclick="createProject()">Create Game</a>
-    <a href="javascript:void(0)" class="btn btn-secondary" onclick="chPage('home-send')">Test Server</a>
+  <div class="page" id="home">
+    <div id="globeViz"></div>
+
+    <div class="btn-container">
+      <button class="btn-glass" onclick="chPage('login')">Login</button>
+      <button class="btn-glass" onclick="chPage('home-games')">Enter</button>
+      <button class="btn-glass" onclick="createProject()">Build</button>
+    </div>
   </div>
 
-  <div class="container page" id="home-send">
-    <input style="width:75%" id="content" type="text" onkeydown="if(event.keyCode == 13)send(this.value)" />
-    <input type="button" value="Send" id="send" onclick="send(document.getElementById('content').value)" />
-    <br>
-    <p>Server's response: <span id="output"></span></p>
-  </div>
 
   <div class="container page" id="home-games">
     <h3>Games</h3>
@@ -178,9 +233,109 @@
 
   </div>
 
-  <!-- Ace cdn from jsDelivr -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js" type="text/javascript"
-    charset="utf-8"></script>
+
+
+
+  <!-- SCRIPT.HOME -->
+  <script type>
+    var myGeo = {
+      lat: 38.7957,
+      lng: -77.613
+    }
+    var serverGeo = {
+      lat: 38,
+      lng: -77
+    }
+    // Constants
+    var ARC_ANIMATION_DURATION = 500;
+
+    // Time of day
+    var hours = new Date().getHours()
+    var isDayTime = hours > 6 && hours < 20
+
+    // Points
+    var pointsData = []
+    function addPoint(lat, lng, color) {
+      var point = {
+        lat,
+        lng,
+        size: 0.1,
+        color: color || "darkorange"
+      }
+      pointsData.push(point)
+      globe.pointsData(pointsData)
+    }
+
+    // Arcs
+    var arcsData = []
+    function addArc(startLat, startLng, endLat, endLng, color1, color2, onTouchdown) {
+      console.log(startLat, startLng, endLat, endLng);
+      function updateArcData() {
+        let diff = false
+        let dateNow = new Date().getTime()
+        for (var i = arcsData.length - 1; i >= 0; i--) {
+          if (dateNow - arcsData[i].created > ARC_ANIMATION_DURATION * 2 - 100) { // Remove old arcs
+            arcsData.splice(i, 1);
+            diff = true
+          }
+        }
+        if (diff) {
+          globe.arcsData(arcsData)
+        }
+      }
+      var arc = {
+        startLat,
+        startLng,
+        endLat,
+        endLng,
+        color: [color1, color2],
+        created: new Date().getTime(),
+      }
+      arcsData.push(arc)
+      globe.arcsData(arcsData)
+      setTimeout(onTouchdown, ARC_ANIMATION_DURATION)
+      setTimeout(updateArcData, ARC_ANIMATION_DURATION * 2)
+    }
+
+    var globeImages = {
+      day: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Blue_Marble_2002_bg21600.png/2560px-Blue_Marble_2002_bg21600.png',
+      night: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/BlackMarble20161km.jpg/2200px-BlackMarble20161km.jpg',
+      amogus: 'https://upload.wikimedia.org/wikipedia/commons/f/f2/Mogus_drip.jpg',
+      kalogo: 'https://upload.wikimedia.org/wikipedia/commons/1/15/Khan_Academy_Logo_Old_version_2015.jpg',
+    }
+
+    var globe = Globe()
+      .globeImageUrl(isDayTime ? globeImages.day : globeImages.night)
+      .showAtmosphere(1)
+      .atmosphereColor('lightskyblue')
+
+      .onGlobeClick((d, e) => {
+        addArc(myGeo.lat, myGeo.lng, serverGeo.lat, serverGeo.lng, '#ff0000', '#ff0000', () => {
+          addArc(serverGeo.lat, serverGeo.lng, d.lat, d.lng, '#ff0000', '#ff0000')
+        })
+
+      })
+      .onGlobeRightClick(() => {
+        let randomImage = Object.values(globeImages)[Math.floor(Math.random() * Object.values(globeImages).length)]
+        globe.globeImageUrl(randomImage)
+      })
+      .pointsData(pointsData)
+      .pointAltitude('size')
+      .pointColor('color')
+      .arcsData(arcsData)
+      .arcColor('color')
+      .arcDashLength(1)
+      .arcDashGap(100)
+      .arcDashInitialGap(1)
+      .arcDashAnimateTime(ARC_ANIMATION_DURATION)
+      .arcsTransitionDuration(0)
+      (document.getElementById('globeViz'));
+
+    globe.controls().autoRotate = true;
+
+    addPoint(myGeo.lat, myGeo.lng, '#00ff00')
+
+  </script>
 
   <script type>{
       { }// highlighting fixed in vscode
@@ -390,11 +545,7 @@
           }
         } else if (firstArg == "geo") {
           let geoData = JSON.parse(data.slice(4))
-          document.getElementById("output").innerHTML =
-            `<h3>You live in ${geoData.country}</h3>
-              <img src="${geoData.flag}" width="100px"/>
-              <p>Timezone: ${geoData.tz}</p>
-              `;
+          myGeo = geoData
         } else if (firstArg == 'deno-set-projects') {
           projects = JSON.parse(secondArg)
           populateProjects()
@@ -423,7 +574,7 @@
 
       var serverIp = "192.168.1.176"
       var linkId = "5918360080531456"
-      
+
       // Create 4-byte fingerprint and use that as answer line number
       var randomFingerprint = Math.random().toString(16).substring(2, 6)
       var answerLineNumber = parseInt(randomFingerprint.slice(0, 2), 16)
@@ -591,32 +742,32 @@
     })
     // Set theme to xterm.js
     term.setOption('theme', {
-  "name": "Atom",
-  "black": "#000000",
-  "red": "#fd5ff1",
-  "green": "#87c38a",
-  "yellow": "#ffd7b1",
-  "blue": "#85befd",
-  "purple": "#b9b6fc",
-  "cyan": "#85befd",
-  "white": "#e0e0e0",
-  "brightBlack": "#000000",
-  "brightRed": "#fd5ff1",
-  "brightGreen": "#94fa36",
-  "brightYellow": "#f5ffa8",
-  "brightBlue": "#96cbfe",
-  "brightPurple": "#b9b6fc",
-  "brightCyan": "#85befd",
-  "brightWhite": "#e0e0e0",
-  "background": "#161719",
-  "foreground": "#c5c8c6",
-  "selectionBackground": "#444444",
-  "cursorColor": "#d0d0d0"
-});
+      "name": "Atom",
+      "black": "#000000",
+      "red": "#fd5ff1",
+      "green": "#87c38a",
+      "yellow": "#ffd7b1",
+      "blue": "#85befd",
+      "purple": "#b9b6fc",
+      "cyan": "#85befd",
+      "white": "#e0e0e0",
+      "brightBlack": "#000000",
+      "brightRed": "#fd5ff1",
+      "brightGreen": "#94fa36",
+      "brightYellow": "#f5ffa8",
+      "brightBlue": "#96cbfe",
+      "brightPurple": "#b9b6fc",
+      "brightCyan": "#85befd",
+      "brightWhite": "#e0e0e0",
+      "background": "#161719",
+      "foreground": "#c5c8c6",
+      "selectionBackground": "#444444",
+      "cursorColor": "#d0d0d0"
+    });
 
 
 
-    
+
 
     document.getElementById('view-stdout').style.display = 'none';
   </script>

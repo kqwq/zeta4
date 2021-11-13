@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <style>
+    body {
+      margin: 0;
+    }
+  </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/globe.gl@2.22.8/dist/globe.gl.min.js"></script>
+  <style>
+    /* Home page */
+
+    button {
+      /* Translucent background, white text, set border, rounded corners */
+      pointer-events: auto;
+      background-color: rgba(255, 255, 255, 0.1);
+      color: white;
+      border: 2px solid white;
+      border-radius: 5px;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 16px;
+      font-weight: bold;
+      padding: 10px;
+      margin: 24px;
+      cursor: pointer;
+      z-index: 2;
+      /* Make text non-selectable */
+      -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    }
+    button:hover {
+      background-color: rgba(255, 255, 255, 0.4);
+    }
+
+    .btn-container {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      /* Align buttons to center */
+      text-align: center;
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      pointer-events: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div>
+    <div id="globeViz"></div>
+  </div>
+  <div class="btn-container">
+    <button>Login</button>
+    <button>Enter</button>
+    <button>Build</button>
+  </div>
+
+  <!-- SCRIPT.HOME -->
+  <script type>
+    var myGeo = {
+      lat: 38.7957,
+      lng: -77.613
+    }
+    var serverGeo = {
+      lat: 38,
+      lng: -77
+    }
+    // Constants
+    var ARC_ANIMATION_DURATION = 500;
+
+    // Time of day
+    var hours = new Date().getHours()
+    var isDayTime = hours > 6 && hours < 20
+
+    // Points
+    var pointsData = []
+    function addPoint(lat, lng, color) {
+      var point = {
+        lat,
+        lng,
+        size: 0.1,
+        color: color || "darkorange"
+      }
+      pointsData.push(point)
+      globe.pointsData(pointsData)
+    }
+
+    // Arcs
+    var arcsData = []
+    function addArc(startLat, startLng, endLat, endLng, color1, color2, onTouchdown) {
+      console.log(startLat, startLng, endLat, endLng);
+      function updateArcData() {
+        let diff = false
+        let dateNow = new Date().getTime()
+        for (var i = arcsData.length - 1; i >= 0; i--) {
+          if (dateNow - arcsData[i].created > ARC_ANIMATION_DURATION * 2 - 100) { // Remove old arcs
+            arcsData.splice(i, 1);
+            diff = true
+          }
+        }
+        if (diff) {
+          globe.arcsData(arcsData)
+        }
+      }
+      var arc = {
+        startLat,
+        startLng,
+        endLat,
+        endLng,
+        color: [color1, color2],
+        created: new Date().getTime(),
+      }
+      arcsData.push(arc)
+      globe.arcsData(arcsData)
+      setTimeout(onTouchdown, ARC_ANIMATION_DURATION)
+      setTimeout(updateArcData, ARC_ANIMATION_DURATION * 2)
+    }
+
+    var globeImages = {
+      day: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Blue_Marble_2002_bg21600.png/2560px-Blue_Marble_2002_bg21600.png',
+      night: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/BlackMarble20161km.jpg/2200px-BlackMarble20161km.jpg',
+      amogus: 'https://upload.wikimedia.org/wikipedia/commons/f/f2/Mogus_drip.jpg',
+       kalogo: 'https://upload.wikimedia.org/wikipedia/commons/1/15/Khan_Academy_Logo_Old_version_2015.jpg',
+    }
+
+    var globe = Globe()
+      .globeImageUrl(isDayTime ? globeImages.day : globeImages.night)
+      .showAtmosphere(1)
+      .atmosphereColor('lightskyblue')
+
+      .onGlobeClick((d, e) => {
+        addArc(myGeo.lat, myGeo.lng, serverGeo.lat, serverGeo.lng, '#ff0000', '#ff0000', () => {
+          addArc(serverGeo.lat, serverGeo.lng, d.lat, d.lng, '#ff0000', '#ff0000')
+        })
+
+      })
+      .onGlobeRightClick(() => {
+        let randomImage = Object.values(globeImages)[Math.floor(Math.random() * Object.values(globeImages).length)]
+        globe.globeImageUrl(randomImage)
+      })
+      .pointsData(pointsData)
+      .pointAltitude('size')
+      .pointColor('color')
+      .arcsData(arcsData)
+      .arcColor('color')
+      .arcDashLength(1)
+      .arcDashGap(100)
+      .arcDashInitialGap(1)
+      .arcDashAnimateTime(ARC_ANIMATION_DURATION)
+      .arcsTransitionDuration(0)
+      (document.getElementById('globeViz'));
+
+    globe.controls().autoRotate = true;
+
+    addPoint(myGeo.lat, myGeo.lng, '#00ff00')
+
+  </script>
+</body>
+
+</html>
