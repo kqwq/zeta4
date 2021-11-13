@@ -7,9 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login2</title>
   <style>
-    body {}
-
-    #page-login {
+    #home-login {
       background-color: rgb(253, 253, 253);
       position: absolute;
       top: 0;
@@ -18,11 +16,9 @@
       height: 95%;
       margin: 20px;
     }
-
-    #page-login b {
+    #home-login b {
       color: blue;
     }
-
     #pp {
       font-family: Arial;
       margin-top: 30px;
@@ -38,16 +34,13 @@
       justify-content: space-between;
       align-items: flex-start;
     }
-
     #pp img {
       width: 64px;
     }
-
     #pp>div {
       margin-left: 15px;
       min-width: 0;
     }
-
     #pp-names {
       display: flex;
       flex-flow: nowrap;
@@ -55,17 +48,14 @@
       align-items: center;
       align-items: flex-end;
     }
-
     #pp-names * {
       margin: 0;
       padding: 0;
     }
-
     #pp-real-name {
       font-size: 20px;
       font-weight: bold;
     }
-
     #pp-username-container {
       display: inline-flex;
       margin-left: 13px;
@@ -73,7 +63,6 @@
       font-size: 16px;
       font-weight: normal;
     }
-
     #pp-username {
       color: #9E9FA2;
       font-size: 16px;
@@ -83,11 +72,9 @@
       background: none;
       outline: none;
     }
-
     #pp-bio {
       font-size: 16px;
     }
-
     #pp-ep {
       color: #0A2A66;
       font-weight: bold;
@@ -98,8 +85,7 @@
 </head>
 
 <body>
-  <div id="page-login">
-
+  <div class="page" id="home-login">
     <!-- Khan Academy profile preview (pp) card -->
     <div id="pp">
       <img id="pp-avatar">
@@ -112,13 +98,10 @@
         <p id="pp-bio"></p>
         <span id="pp-ep"></span>
       </div>
-
-
     </div>
     <button class="button" id="btn-login-as" onclick="logInAs()">Log in as <span
         id="login-as-username">[Unknown]</span></button>
     <button class="button" id="btn-continue-as-guest">Continue as guest</button>
-
     <div id="bio-change-container">
       <h3>Step 2 - Verify your account</h3>
       <p id="bio-change-instructions">To ensure this account belongs to you, add the <b id="bio-add-pin">[error, do not add this]</b> PIN to your Khan
@@ -129,10 +112,10 @@
   </div>
 
 </body>
+
+<!-- SCRIPT.LOGIN -->
 <script type>
   var bioChangePIN = "#" + Math.random().toString(36).substring(6,10).toUpperCase();
-
-
   var ppAnimation = 1;
   var ppAnimationTarget = 1;
   var ppShown = true;
@@ -208,6 +191,7 @@
       d => {
         if (d.bio.includes(bioChangePIN)) {
           alert("Success! You can now log in as " + fetchingUsername + " automatically.")
+          chPage("home")
         } else {
           alert(`Your bio does not contain the PIN ${bioChangePIN}`)
         }
@@ -228,7 +212,7 @@
         ppu.style.marginTop = "40px"
         console.log(ppu.style.marginLeft);
         console.log(ppu.style.marginLeft);
-        document.getElementById("page-login").appendChild(ppu)
+        document.getElementById("home-login").appendChild(ppu)
         document.getElementById("pp").style.display = "none";
         document.getElementById("btn-login-as").style.display = "none";
         document.getElementById("bio-change-container").style.display = "none";
@@ -249,7 +233,6 @@
   }
   ppHide()
   ppKeyframe(1)
-
   setInterval(() => {
     if (true || page == "login") {///
       if (ppAnimation == ppAnimationTarget) {

@@ -62,6 +62,85 @@
       pointer-events: none;
     }
 
+    /* STYLE.LOGIN */
+    #home-login {
+      background-color: rgb(253, 253, 253);
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 95%;
+      height: 95%;
+      margin: 20px;
+    }
+    #home-login b {
+      color: blue;
+    }
+    #home-login button {
+      margin: 10px;
+    }
+    #pp {
+      font-family: Arial;
+      margin-top: 30px;
+      width: 380px;
+      border: 1px solid rgb(204, 204, 204);
+      border-radius: 7px;
+      padding-left: 10px;
+      box-shadow: 0px 0px 5px rgb(204, 204, 204);
+      padding: 15px 21px;
+
+      /* Align items left to right, pinned to top (Thanks GitHub Copilot) */
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    #pp img {
+      width: 64px;
+    }
+    #pp>div {
+      margin-left: 15px;
+      min-width: 0;
+    }
+    #pp-names {
+      display: flex;
+      align-items: center;
+    }
+    #pp-names * {
+      margin: 0;
+      padding: 0;
+    }
+    #pp-real-name {
+      font-size: 20px;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+    #pp-username-container {
+      display: inline-flex;
+      margin-left: 3px;
+      color: #9E9FA2;
+      font-size: 16px;
+      font-weight: normal;
+      min-width: 0;
+    }
+    #pp-username {
+      color: #9E9FA2;
+      font-size: 16px;
+      font-weight: normal;
+      /* Strip styling from input */
+      border: none;
+      background: none;
+      outline: none;
+    }
+    #pp-bio {
+      font-size: 16px;
+    }
+    #pp-ep {
+      color: #0A2A66;
+      font-weight: bold;
+      font-size: 16px;
+      float: right;
+    }
+
+    /* STYLE.REST */
     .toolbar {
       background-color: rgba(0, 0, 0, 0.1);
       position: absolute;
@@ -71,6 +150,8 @@
       width: 100%;
       font-size: 15px;
       z-index: 10;
+      height: 20px;
+      line-height: 18px;
     }
 
     #kam-views a {
@@ -180,20 +261,48 @@
     <div id="globeViz"></div>
 
     <div class="btn-container">
-      <button class="btn-glass" onclick="chPage('login')">Login</button>
+      <button class="btn-glass" onclick="chPage('home-login')">Login</button>
       <button class="btn-glass" onclick="chPage('home-games')">Enter</button>
       <button class="btn-glass" onclick="createProject()">Build</button>
     </div>
   </div>
 
+  <!-- Dynamic login page -->
+  <div class="page mt-3" id="home-login">
+    <!-- Khan Academy profile preview (pp) card -->
+    <div id="pp">
+      <img id="pp-avatar">
+      <div>
+        <div id="pp-names">
+          <span id="pp-real-name"></span>
+          <span id="pp-username-container">@<input autocomplete="off" id="pp-username"
+              placeholder="Enter your username or KAID" onkeyup="fetchUsername()"></span>
+        </div>
+        <p id="pp-bio"></p>
+        <span id="pp-ep"></span>
+      </div>
+    </div>
+    <div class="input-group">
+    <button class="btn btn-primary" id="btn-login-as" onclick="logInAs()">Log in as <span
+        id="login-as-username">[Unknown]</span></button>
+    <button class="btn btn-secondary" id="btn-continue-as-guest" onclick="chPage('home')">Continue as guest</button>
+  </div>
+    <div id="bio-change-container" class="mt-3">
+      <h3>Step 2 - Verify your account</h3>
+      <p id="bio-change-instructions">To ensure this account belongs to you, add the <b id="bio-add-pin">[error, do not add this]</b> PIN to your Khan
+        Academy bio. You can edit your bio
+        with <a href="https://www.khanacademy.org/profile/me">this link</a>.</p>
+      <button class="btn btn-primary" id="btn-verify" onclick="verifyBioChange()">Verify</button>
+    </div>
+  </div>
 
-  <div class="container page" id="home-games">
+  <div class="container page mt-5" id="home-games">
     <h3>Games</h3>
     <button onclick="getProjects()" class="btn btn-dark btn-sm">Refresh</button>
     <div id="game-list"> </div>
   </div>
 
-  <div class="container page" id="home-games-project">
+  <div class="container page mt-5" id="home-games-project">
     <h4 id="kam-proj-title" contenteditable="true">Project</h4>
     <p id="kam-proj-desc" contenteditable="true">desc</p><br>
     Version: <p id="kam-proj-version" contenteditable="true">v</p><br>
@@ -208,7 +317,7 @@
     <h4>Getting things ready...</h4>
   </div>
 
-  <div class="page" id="home-games-project-edit">
+  <div class="page mt-5" id="home-games-project-edit">
     <div id="view-server">
       <div id="editor">function foo(items) {
         var x = "All this is syntax highlighted";
@@ -225,7 +334,7 @@
     </div>
   </div>
 
-  <div class="container page" id="home-games-project-join">
+  <div class="container page mt-5" id="home-games-project-join">
     <h4>Project join</h4>
   </div>
 
@@ -336,6 +445,140 @@
     addPoint(myGeo.lat, myGeo.lng, '#00ff00')
 
   </script>
+
+  <!-- SCRIPT.LOGIN -->
+<script type>
+  var bioChangePIN = "#" + Math.random().toString(36).substring(6,10).toUpperCase();
+  var ppAnimation = 1;
+  var ppAnimationTarget = 1;
+  var ppShown = true;
+  var ppu = document.getElementById("pp-username")
+  function ppShow() { // Show pp card and show small username input
+    document.getElementById("btn-login-as").disabled = false;
+    document.getElementById("bio-change-container").style.display = "none";
+    ppAnimationTarget = 0;
+  }
+  function ppHide() { // Hide pp card and show large username input
+    ppAnimationTarget = 1
+  }
+  var usernameBlocking = false;
+  var fetchingUsername = ""
+  function fetchUsername() { // Show pp card if username input is focused
+    function getPPUValue() {
+      // Remove non-alphanumeric/underscore characters
+      ppu.value = ppu.value.replace(/[^a-zA-Z0-9_]/g, "");
+      return ppu.value
+    }
+    if (usernameBlocking) {
+      if (fetchingUsername !== getPPUValue()) { // If user quickly typed a new username and it was blocked, fetch it later
+        fetchingUsername = getPPUValue()
+        setTimeout(() => {
+          if (fetchingUsername === getPPUValue()) { // After a second, if the username is still different, fetch it
+            fetchUsername()
+          }
+        }, 1000)
+      }
+      return;
+    }
+    fetchingUsername = getPPUValue();
+    if (fetchingUsername.length < 3) {
+      ppHide()
+      return;
+    }
+    usernameBlocking = true;
+    try {
+      let profileParameter = fetchingUsername.slice(0, 5) == "kaid_" ? "kaid" : "username";
+      parent.$.getJSON(`https://www.khanacademy.org/api/internal/user/profile?${profileParameter}=${fetchingUsername}&projection={%22nickname%22:1,%22kaid%22:1,%22avatarSrc%22:1,%22points%22:1,%22bio%22:1}&callback=?`,
+        json => {
+          if (json == null) {
+            ppHide();
+            throw "Username does not exist"
+          }
+          document.getElementById("pp-real-name").textContent = json.nickname;
+          document.getElementById("pp-avatar").src = json.avatarSrc;
+          document.getElementById("pp-bio").textContent = json.bio;
+          document.getElementById("pp-ep").textContent = json.points ? "?" : "+" + json.points.toLocaleString()
+          document.getElementById("login-as-username").textContent = fetchingUsername
+          ppShow()
+        }
+      )
+    } catch (e) {
+      console.log(e)
+      ppHide()
+    } finally {
+      usernameBlocking = false;
+    }
+  }
+  function logInAs() {
+    document.getElementById("btn-login-as").disabled = true;
+    document.getElementById("bio-change-container").style.display = "block";
+    document.getElementById("bio-add-pin").textContent = bioChangePIN;
+    let txt = document.getElementById("pp-bio").textContent
+    // Make sure bio contains the PIN
+    txt = `<b>New bio: </b>${txt.slice(0, 160 - bioChangePIN.length)}<span>${bioChangePIN}</span>`
+    document.getElementById("pp-bio").innerHTML = txt
+  }
+  function verifyBioChange() {
+    let profileParameter = fetchingUsername.slice(0, 5) == "kaid_" ? "kaid" : "username";
+    parent.$.getJSON(`https://www.khanacademy.org/api/internal/user/profile?${profileParameter}=${fetchingUsername}&projection={%22bio%22:1}&callback=?`,
+      d => {
+        if (d.bio.includes(bioChangePIN)) {
+          alert("Success! You can now log in as " + fetchingUsername + " automatically.")
+          chPage("home")
+        } else {
+          alert(`Your bio does not contain the PIN ${bioChangePIN}`)
+        }
+      })
+  }
+
+  function ppKeyframe(p) { // p = percentage of animation
+    ppu.style.border = `${p < 0.1 ? 0 : 3 * p}px solid rgba(204, 204, 204, ${p})`;
+    ppu.style["font-size"] = `${16 + 14 * p}px`;
+    ppu.style.width = `${p < 0.5 ? "" : (85 * p * p) + "%"}`;
+    ppu.style.height = `${p < 0.5 ? "" : (50 * p) + "px"}`;
+    ppu.style.padding = `${20 * p}px`
+    ppu.style["border-radius"] = "5px";
+    if (p > 0.5) {
+      ppu.style.marginLeft = `${600 * (1 - p)}px`
+      if (ppShown) {
+        ppShown = false;
+        ppu.style.marginTop = "40px"
+        console.log(ppu.style.marginLeft);
+        console.log(ppu.style.marginLeft);
+        document.getElementById("home-login").appendChild(ppu)
+        document.getElementById("pp").style.display = "none";
+        document.getElementById("btn-login-as").style.display = "none";
+        document.getElementById("bio-change-container").style.display = "none";
+        ppu.focus()
+      }
+    } else {
+      if (!ppShown) {
+        ppShown = true;
+        ppu.style.marginLeft = "0px";
+        ppu.style.marginTop = "0px"
+        document.getElementById("pp-username-container").appendChild(ppu)
+        document.getElementById("pp").style.display = "flex";
+        document.getElementById("btn-login-as").style.display = "block";
+        ppu.focus()
+      }
+    }
+  }
+  ppHide()
+  ppKeyframe(1)
+  setInterval(() => {
+    if (true || page == "login") {///
+      if (ppAnimation == ppAnimationTarget) {
+        return
+      } else if (Math.abs(ppAnimation - ppAnimationTarget) < 0.001) {
+        ppAnimation = ppAnimationTarget;
+        ppKeyframe(ppAnimation)
+      } else {
+        ppAnimation += (ppAnimationTarget - ppAnimation) * 0.07;
+        ppKeyframe(ppAnimation)
+      }
+    }
+  }, 1000 / 50)
+</script>
 
   <script type>{
       { }// highlighting fixed in vscode
