@@ -5,7 +5,7 @@ import fetch from 'node-fetch'
 import wrtc from 'wrtc'
 import Peer from 'simple-peer'
 import dotenv from 'dotenv'
-import globalCommands from "./_global.js"
+import metaCommands from "./commands/meta.js"
 
 // config.json tools
 dotenv.config()
@@ -56,23 +56,6 @@ let peers = [
   // }
 ]
 
-// Game commands
-var gameCommands = []
-function changeGame(gameName, peerContext) {
-  (async () => {
-    try {
-      let res = await import(`./games/${gameName}.js`)
-      gameCommands = res.default
-      console.log(gameCommands);
-      peerContext.peer.send(`game-change-sucess ${gameName}`)
-      console.log(`Game changed to ${gameName}`)
-    } catch (e) {
-      peerContext.peer.send(`unknown-game ${gameName}`)
-      console.error(`Unknown game ${gameName}`)
-    }
-  })();
-}
-
 // Manual input
 var manualInputUsed = false
 fs.watchFile('ManualInput.txt', (curr, prev) => {
@@ -97,6 +80,11 @@ fs.watchFile('ManualInput.txt', (curr, prev) => {
   }
 })
 
+// Handle client-to-deno data transfer
+function clientToDeno(denoProcess, recipient, message) {
+  denoProcess.stdin.write("@" + recipient + " " + message + "\n");
+}
+
 async function createNewPeer(peerContext) {
 
   // Generate a peer
@@ -118,44 +106,35 @@ async function createNewPeer(peerContext) {
   }).on('data', data => {
 
     // Find command
-    var commandName, commandArgs, cmd;
+    var commandName, args, cmd;
     data = data.toString()
-    if (data?.[0] == '^') {
-      peerContext?.denoProcess?.stdin?.write(data.slice(1) + '\n')
+    if (data.startsWith('^')) { // If came from iframe
+      console.log(`Received command from iframe: ${data}`);
+      if (!peerContext.denoProcess) {
+        console.log(`Deno process not found!`);
+        return
+      }
+      clientToDeno(peerContext.denoProcess, peerContext.ipInfo.ip, data.slice(1))
       return
     }
     if (data.startsWith('!')) { // If command format
-      if (data.includes(' ')) {
-        commandName = data.substring(1, data.indexOf(' '))  // Remove the !
-        commandArgs = data.substring(data.indexOf(' ') + 1) // String after the first space
-      } else {
-        commandName = data.substring(1)
-        commandArgs = ""
-      }
-      cmd = globalCommands.find(x => x.name == commandName) // Global commands takes priority over game commands
+      console.log(`Received command from meta: ${data}`);
+      data = data.slice(1);
+      [ commandName, args ] = data.split(/ (.+)/s)
+      cmd = metaCommands.find(x => x.name == commandName) // Global commands takes priority over game commands
       if (!cmd) {
-        cmd = gameCommands.find(x => x.name == commandName)
-      }
-      if (!cmd) {
-        if (commandName == 'change-game') {
-          changeGame(commandArgs, peerContext)
-          return
-        }
-        console.log(`Unknown command: ${commandName}`)
-        peerContext.peer.send(`unknown-command ${commandName}`)
+        console.log(`Unknown command: ${commandName}`, args)
+        peerContext.peer.send(`unknown-command ${commandName} ${args}`)
         return
       }
     } else { // If wildcard format
-      commandArgs = data
-      cmd = gameCommands.find(x => x.name == '*') // Game wildcard takes priority over global wildcard
-      if (!cmd) {
-        cmd = globalCommands.find(x => x.name == "*")
-      }
+      args = data
+      cmd = metaCommands.find(x => x.name == "*")
     }
 
     // Execute command
     try {
-      cmd.exec(commandArgs, peerContext, peers)
+      cmd.exec(args, peerContext, peers)
     } catch (e) {
       console.log(`There was an error executing the command: ${commandName}`)
       console.log(e)

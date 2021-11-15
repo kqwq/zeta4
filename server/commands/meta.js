@@ -5,6 +5,7 @@ import { spawn } from 'child_process';
 import { promises as fs } from "fs";
 import { timingSafeEqual } from 'crypto';
 import fetch from 'node-fetch';
+import denoCommands from './deno.js';
 
 dotenv.config();
 
@@ -14,7 +15,6 @@ let starterClientHtmlCode = (name) => `<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>${name}</title>
 </head>
 <body>
@@ -29,7 +29,7 @@ export default [
     name: "*",
     exec: (args, p) => {
       try {
-        p.peer.send("Wildcard command * recieved by server: " + args.toString())
+        p.peer.send("Wildcard command * recieved by server with data " + args.toString())
       } catch (e) {
         console.log("Missed input (p.peer is not assigned): " + args)
       }
@@ -135,21 +135,26 @@ export default [
     }
   },
   {
-    name: "deno-run",
+    name: "deno-save-client",
+    exec: (args, p) => {
+      (async () => {
+        let argData = JSON.parse(args)
+        let denoProjPath = `./deno/${argData.project}`
+        await fs.writeFile(`${denoProjPath}/client.html`, argData.code)
+        p.peer.send("deno-save-client-success")
+      })();
+    }
+  },
+  {
+    name: "deno-save-and-run-server",
     exec: (args, p, peers) => {
       (async () => {
         let argData = JSON.parse(args)
         let denoProjPath = `./deno/${argData.project}`
-        
-        // Check if denoProjPath exists
-        let stats = await fs.stat(denoProjPath)
-        if (!stats.isDirectory()) {
-          await fs.mkdir(denoProjPath)
-        }
 
         // Write demo server code
         await fs.writeFile(`${denoProjPath}/server.js`, argData.code) 
-        p.peer.send(`~\x1b[36mdeno run ${denoProjPath}/server.js\x1B[0m\n`)
+        p.peer.send(`~\x1b[36mdeno run ${denoProjPath}/server.js\x1B[0m`)
 
         // Create instance of Deno
         let child = spawn('deno', ['run', '--v8-flags=--max-old-space-size=256', `${denoProjPath}/server.js`])
@@ -157,29 +162,40 @@ export default [
         child.stdout.setEncoding('utf8');
         child.stdout.on('data', function (data) {
           data = data.toString();
-          if (data.startsWith("KAM_FETCH")) {
-            (async () => {
-              let fetchData = await fetch(data.substring(10))
-              let fetchDataString = await fetchData.text()
-              child.stdin.write("KAM_FETCHED " + fetchDataString)
-            })();
-            return
+
+          console.log("Deno says ", data);
+
+          // Fetch websites
+          // if (data.startsWith("KAM_FETCH")) {
+          //   (async () => {
+          //     let fetchData = await fetch(data.substring(10))
+          //     let fetchDataString = await fetchData.text()
+          //     child.stdin.write("KAM_FETCHED " + fetchDataString)
+          //   })();
+          //   return
+          // }
+          var cmd, args, commandName;
+          if (data.startsWith("!")) {
+            [ commandName, args ] = data.split(/ (.+)/s)
+            cmd = denoCommands.find(c => c.name == commandName.substring(1))
+          } else {
+            args = data
+            cmd = denoCommands.find(c => c.name == "*")
           }
-          if (data.startsWith("@")) {
-            let spaceInd = data.indexOf(" ")
-            let localId = data.substring(1, spaceInd)
-            let rest = data.substring(spaceInd + 1)
-            let otherPeer = peers.find(p => p.localId == localId)
-            if (otherPeer) {
-              otherPeer.peer.send(rest)
+          if (cmd) {
+            try {
+              cmd.exec(args, child, peers)
+            } catch (e) {
+              console.log(`There was an error executing the command: ${commandName}`)
+              console.log(e)
             }
-            return
+          } else {
+            console.log("~\x1b[31mUnknown command: " + commandName + "\x1B[0m")
           }
-          p.peer.send("~" + data) // if client is veiwing the console, send the output to it /// todo change
           scriptOutput += data;
           if (scriptOutput.length > 10000) {
             p.denoProcess.kill()
-            p.peer.send("~\x1b[31mDeno process killed due to excessive output\x1B[0m\n")
+            p.peer.send("~\x1b[31mDeno process killed due to excessive output\x1B[0m")
           }
         });
         child.stderr.on('error', function (data) {
