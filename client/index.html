@@ -19,6 +19,38 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js" type="text/javascript"
     charset="utf-8"></script>
   <style>
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 12px;
+      height: 12px;
+    }
+
+    ::-webkit-scrollbar-track {
+      box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
+      border-radius: 10px;
+    }
+
+    /* STYLE.HOME */
+    #home-instructions-container {
+      position: absolute;
+      left: 10px;
+      bottom: 10px;
+      font-size: 14px;
+      display: flex;
+      flex-direction: column;
+      color: white;
+      font-family: monospace;
+    }
+
+    #logged-in-as {
+      color: gray;
+    }
+
     .btn-glass {
       /* Translucent background, white text, set border, rounded corners */
       pointer-events: auto;
@@ -154,7 +186,7 @@
 
     /* STYLE.REST */
     .toolbar {
-      background-color: rgba(0, 0, 0, 0.1);
+      background-color: rgba(252, 252, 252, 0.9);
       position: absolute;
       top: 0px;
       left: 0px;
@@ -220,15 +252,6 @@
       align-items: flex-end;
       flex-wrap: wrap;
     }
-
-    #editor {
-      position: absolute;
-      top: 25px;
-      right: 0;
-      bottom: 0;
-      left: 0;
-    }
-
     #editor-options {
       position: absolute;
       top: 40px;
@@ -260,26 +283,18 @@
       font-family: monospace;
     }
 
+
+    #view-html,
+    #view-view,
+    #view-server,
     #view-stdout {
       position: absolute;
       top: 21px;
-    }
-
-    #view-html {
-      position: absolute;
-      top: 21px;
       right: 0;
       bottom: 0;
       left: 0;
     }
 
-    #view-view {
-      position: absolute;
-      top: 21px;
-      right: 0;
-      bottom: 0;
-      left: 0;
-    }
 
     #view-iframe {
       width: 100%;
@@ -313,9 +328,16 @@
     <div id="globeViz"></div>
 
     <div class="btn-container">
-      <button class="btn-glass" onclick="chPage('home-login')">Login</button>
-      <button class="btn-glass" onclick="chPage('home-games')">Enter</button>
-      <button class="btn-glass" onclick="createProject()">Build</button>
+      <button class="btn-glass" onclick="chPage('home-login')"
+        onhover="homePopulateInstructions('login')">Login</button>
+      <button class="btn-glass" onclick="chPage('home-games')"
+        onhover="homePopulateInstructions('enter')">Enter</button>
+      <button class="btn-glass" onclick="createProject()" onhover="homePopulateInstructions('build')">Build</button>
+    </div>
+
+    <div id="home-instructions-container">
+      <span id="home-instructions"></span>
+      <span>Logged in as <span id="logged-in-as"></span></span>
     </div>
   </div>
 
@@ -371,11 +393,9 @@
   </div>
 
   <div class="page mt-5" id="home-games-project-edit">
-    <div id="view-server">
-      <div id="editor">function foo(items) {
+    <div id="view-server">function foo(items) {
         var x = "All this is syntax highlighted";
         return x;
-        }</div>
     </div>
     <div id="view-html">
       <div id="editor-html">Loading HTML...</div>
@@ -393,10 +413,10 @@
             if (event.source !== iframe.contentWindow) {
               return;
             }
-            
-            console.log('Received message from iframe: ', event.data,event);
+
+            console.log('Received message from iframe: ', event.data, event);
             send("^" + JSON.stringify(event.data));
-        });
+          });
         };
 
         // Append iframe to document body
@@ -412,8 +432,7 @@
     </div>
   </div>
 
-  <div class="container page mt-5" id="home-games-project-join">
-    <h4>Project join</h4>
+  <div class="page" id="home-games-project-join">
   </div>
 
   <div id="view-stdout">
@@ -522,10 +541,20 @@
 
     addPoint(myGeo.lat, myGeo.lng, '#00ff00')
 
+    function homePopulateInstructions(buttonName) {
+      let instructions = {
+        login: "Login in with your Khan Academy account",
+        enter: "Choose from a selection of multiplayer-compatible projects",
+        build: "Create a new metaverse project or begin with a template - guests cannot create projects",
+      }
+      document.getElementById('home-instructions').innerHTML = instructions[buttonName]
+    }
+
   </script>
 
   <!-- SCRIPT.LOGIN -->
   <script type>
+    var uid = ""
     var bioChangePIN = "#" + Math.random().toString(36).slice(6, 10).toUpperCase();
     var ppAnimation = 1;
     var ppAnimationTarget = 1;
@@ -621,8 +650,6 @@
         if (ppShown) {
           ppShown = false;
           ppu.style.marginTop = "40px"
-          console.log(ppu.style.marginLeft);
-          console.log(ppu.style.marginLeft);
           document.getElementById("home-login").appendChild(ppu)
           document.getElementById("pp").style.display = "none";
           document.getElementById("btn-login-as").style.display = "none";
@@ -727,11 +754,15 @@
 
       }
       function joinProject(projName) {
-        alert("Work in progress")
-        //projectName = projName || projectName;
-        chPage('home-games-project-loading');
-        send("!deno-get-join " + myProject.name)
+        projName = projName ? projName : myProject.name;
         chPage('home-games-project-join')
+        iframe.srcdoc = "Loading..."
+        document.getElementById('home-games-project-join').appendChild(iframe) // Move iframe to home-games-project-join page
+        send("!join-game " + myProject.name)
+      }
+      function leaveProject() {
+        send("!leave-game")
+        chPage('home-games-project')
       }
       function saveProjectChanges() {
         function alphanumericOrDashFilter(str) {
@@ -742,7 +773,8 @@
           name: alphanumericOrDashFilter(document.getElementById('kam-proj-title').textContent), // Sanitize name
           desc: document.getElementById('kam-proj-desc').textContent.slice(0, 1024), // Shorten
           version: document.getElementById('kam-proj-version').textContent.slice(0, 20),
-          author: myProject.author
+          author: uid,
+          lastUpdated: Date.now()
         }
         aboutProject();
         if (projects.find(p => p.name == myProject.name)) {
@@ -844,7 +876,7 @@
         editorHtml.session.setMode("ace/mode/html");
 
         // Server editor
-        editorServer = ace.edit("editor");
+        editorServer = ace.edit("view-server");
         editorServer.setTheme("ace/theme/monokai");
         editorServer.session.setMode("ace/mode/javascript");
       }
@@ -869,7 +901,8 @@
         // Special rules
         if (page == "home-games-project-edit") {
           document.getElementById("kam-views").style.display = "inline";
-          chView("server");
+          chView("html");
+          document.getElementById("view-view").appendChild(iframe); // Move iframe to home-games-project-edit page
         } else {
           document.getElementById("kam-views").style.display = "none";
           terminalActive = false;
@@ -895,7 +928,7 @@
         if (data.startsWith("~")) {
           // Send message to terminal if it is open
           if (page == "home-games-project-edit") {
-            term.write(data.slice(1).replace(/\n/g, "\r\n"))
+            term.write((data.slice(1)).replace(/\x07/, "\x1b[31m[DEBUG]\x1b[0m ").replace(/\n/g, "\r\n"))
           }
           return
         }
@@ -915,9 +948,13 @@
         }
         console.log("%c" + data, 'background: #000; color: #ff00ff')
         let [firstArg, secondArg] = data.split(/ (.+)/s)
-        
         if (firstArg == "deno-terminal-end") {
-          term.nextLine()
+          if (page === "home-games-project-edit") {
+            ///term.nextLine() //useless I think?
+          } else if (page === "home-games-project-join") {
+            alert("Game crashed on server")
+            leaveProject()
+          }
         } else if (firstArg == "deno-save-client-success") {
           document.getElementById("editor-save").disabled = false // enable button
         } else if (firstArg == "geo") {
@@ -944,10 +981,16 @@
           removedProjectName = secondArg
           projects = projects.filter(p => p.name != removedProjectName)
           populateProjects()
+        } else if (firstArg == 'set-uid') {
+          uid = secondArg
+          localStorage.setItem("METAVERSE_UID", uid)
+          document.getElementById("logged-in-as").innerText = uid
+        } else if (firstArg == 'set-password') {
+          localStorage.setItem("METAVERSE_PASSWORD", secondArg)
         }
       }
 
-      var serverIp = "192.168.1.176"
+      
       var linkId = "5918360080531456"
 
       // Create 4-byte fingerprint and use that as answer line number
@@ -968,7 +1011,7 @@
         }).on("connect", function () {
           isConnected = true
           document.getElementById("kam-status").textContent = "✓"
-          setTimeout(() => getProjects(), 1000)
+          onServerConnected()
         }).on("data", function (data) {
           onRecieve(data.toString())
         }).on("close", function () {
@@ -1065,6 +1108,15 @@
 
       }
 
+      function onServerConnected() {
+        // Wait 1 second to make sure the server has time to connect
+        setTimeout(() => {
+          getProjects()
+          send("!get-guest-uid") // Get guest (temporary) username for those who don't log in yet
+        }, 1000)
+
+      }
+
       // Update loading ellipsis
       setInterval(() => {
         document.querySelectorAll(".loading").forEach(ele => {
@@ -1094,12 +1146,12 @@
     };
     term.prompt = () => {
       term.write('\n')
-      if (term.currLine == "cls\r" || term.currLine == "clear\r") {
+      if (term.currLine == "cls" || term.currLine == "clear") {
         term.clear()
       } else if (term.currLine == "help\r") {
         term.nextLine()
       } else {
-        ///send(term.currLine.toString().trim()) // todo only send if server is not running
+        send("^" + term.currLine.toString().trim()) // todo only send if server is not running
       }
       term.currLine = "";
     };

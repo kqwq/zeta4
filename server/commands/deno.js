@@ -1,4 +1,10 @@
+let whitelistedDomains = [
+  "https://www.khanacademy.org/api/",
+  "https://upload.wikimedia.org/",
+  "https://wikimedia.org/",
+];
 
+import fetch from "node-fetch";
 
 /**
  * In this command list, it is VERY important to send a message beginning with the caret sign (^)
@@ -15,12 +21,12 @@ function clientToDeno(denoProcess, recipient, message) {
 export default [
   {
     name: '*',
-    exec: (args, denoProcess, peerContext) => {
-      // Check if peer has a denoProcess
-      for (const p of peerContext) {
-        if (p.denoProcess) {
-          p.peer.send(`~${args}`);
-        }
+    exec: (args, denoProcess, peers) => {
+      // If testing, send gray text to the client
+      if (denoProcess.isTesting) {
+        // \x07 is shorthand for the bell character, but I'm using it to signal a "\x1b[31m[DEBUG]\x1b[0m " message
+        let output = args.split("\n").filter(line => !!line.length).map(line => "\x07" + line).join("\n");
+        peers[0].peer.send("~" + output + "\n");
       }
     }
   },
@@ -51,6 +57,31 @@ export default [
       }
     }
   },
+  {
+    name: 'fetch',
+    exec: (args, denoProcess, peers) => {
+      let url = args
+      for (let domain of whitelistedDomains) {
+        // Check if the url is whitelisted
+        if (url.startsWith(domain)) {
+          // Fetch the url
+          fetch(url).then(res => {
+            res.text().then(text => {
+              // Send the text to the client
+              serverToDeno(denoProcess, 'fetch', {
+                text: text,
+                url: url,
+                status: res.status,
+                statusText: res.statusText
+              });
+            });
+          });
+          return
+        }
+      }
+    }
+
+  }
 
 
 ]

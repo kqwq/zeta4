@@ -1,5 +1,5 @@
 import { findFlagUrlByIso2Code } from 'country-flags-svg'
-import { getCountry, getTimezone } from 'countries-and-timezones';
+import { getAllTimezones, getCountry, getTimezone } from 'countries-and-timezones';
 import dotenv from 'dotenv';
 import { spawn } from 'child_process';
 import { promises as fs } from "fs";
@@ -8,6 +8,10 @@ import fetch from 'node-fetch';
 import denoCommands from './deno.js';
 
 dotenv.config();
+
+const hidePersonalFilename = (filename) => {
+  return filename.replace(/file:\/\/\/C:\/Users\/Student\/Code\/KA2\/zeta4\/server\/deno\//g, '')
+}
 
 let starterServerJSCode = `console.log('Hello world!');`;
 let starterClientHtmlCode = (name) => `<!DOCTYPE html>
@@ -23,6 +27,73 @@ let starterClientHtmlCode = (name) => `<!DOCTYPE html>
     <p>To save, click the save button in the top right corner of the output window.</p>
 </body>
 </html>`;
+
+function createDenoProcessAndAppendToGames(projectName, p, peers, games, isTesting) {
+  // Create instance of Deno
+  let denoProjPath = `./deno/${projectName}`
+  let child = spawn('deno', ['run', '--v8-flags=--max-old-space-size=256', `${denoProjPath}/server.js`])
+  child.scriptOutput = "";
+  child.isTesting = isTesting;
+  child.stdout.setEncoding('utf8');
+  child.stdout.on('data', function (data) {
+    data = data.toString();
+    var cmd, args, commandName;
+    if (data.startsWith("!")) {
+      [commandName, args] = data.split(/ (.+)/s)
+      cmd = denoCommands.find(c => c.name == commandName.substring(1))
+    } else {
+      args = data
+      cmd = denoCommands.find(c => c.name == "*")
+    }
+    if (cmd) {
+      try {
+        cmd.exec(args, child, peers)
+      } catch (e) {
+        console.log(`There was an error executing the command: ${commandName}`)
+        console.log(e)
+      }
+    } else {
+      console.log("~\x1b[31mUnknown command: " + commandName + "\x1B[0m")
+    }
+    child.scriptOutput += data;
+    if (child.scriptOutput.length > 10000) {
+      child.kill()
+      p.peer.send("~\x1b[31mDeno process killed due to excessive output\x1B[0m\n")
+    }
+  });
+  child.stderr.on('data', function (err) {
+    err = hidePersonalFilename(err.toString())
+    p.peer.send("~" + err)
+    child.scriptOutput += err;
+  });
+  child.on('close', function (code) {
+    p.peer.send(`~Process finished with exit code ${code}\n`)
+    p.peer.send('deno-terminal-end')
+    for (let peer2 of peers) {
+      if (peer2.playing === projectName) { // If the peer is playing the game, remove it
+        peer2.playing = null
+      }
+    }
+    // Remove the game from the list of games
+    let [gameRemoved] = games.splice(games.findIndex(g => g.name === projectName), 1)
+
+    // Restart the game if testing
+    if (gameRemoved && gameRemoved.onRestart) {
+      gameRemoved.onRestart()
+    }
+  });
+
+
+  // Add the game to the list of games
+  games.push({
+    name: projectName,
+    denoProcess: child,
+    players: [p.uid],
+    started: new Date()
+  })
+  p.playing = projectName
+
+}
 
 export default [
   {
@@ -71,7 +142,7 @@ export default [
     name: "deno-create-project",
     exec: (args, p) => {
       (async () => {
-        let name = 'new-' +  Math.random().toString().substring(14)
+        let name = 'new-' + Math.random().toString().substring(14)
         await fs.mkdir('./deno/' + name)
         let newProject = {
           name: name,
@@ -147,71 +218,30 @@ export default [
   },
   {
     name: "deno-save-and-run-server",
-    exec: (args, p, peers) => {
+    exec: (args, p, peers, games) => {
       (async () => {
+
+        // Define vars
         let argData = JSON.parse(args)
-        let denoProjPath = `./deno/${argData.project}`
+        let projectName = argData.project
+        let denoProjPath = `./deno/${projectName}`
 
         // Write demo server code
-        await fs.writeFile(`${denoProjPath}/server.js`, argData.code) 
-        p.peer.send(`~\x1b[36mdeno run ${denoProjPath}/server.js\x1B[0m`)
+        await fs.writeFile(`${denoProjPath}/server.js`, argData.code)
 
-        // Create instance of Deno
-        let child = spawn('deno', ['run', '--v8-flags=--max-old-space-size=256', `${denoProjPath}/server.js`])
-        var scriptOutput = "";
-        child.stdout.setEncoding('utf8');
-        child.stdout.on('data', function (data) {
-          data = data.toString();
-
-          console.log("Deno says ", data);
-
-          // Fetch websites
-          // if (data.startsWith("KAM_FETCH")) {
-          //   (async () => {
-          //     let fetchData = await fetch(data.substring(10))
-          //     let fetchDataString = await fetchData.text()
-          //     child.stdin.write("KAM_FETCHED " + fetchDataString)
-          //   })();
-          //   return
-          // }
-          var cmd, args, commandName;
-          if (data.startsWith("!")) {
-            [ commandName, args ] = data.split(/ (.+)/s)
-            cmd = denoCommands.find(c => c.name == commandName.substring(1))
-          } else {
-            args = data
-            cmd = denoCommands.find(c => c.name == "*")
+        // Attach to the games list
+        let game = games.find(g => g.name === projectName) // Check if the game is already running
+        if (game) {
+          game.onRestart = () => { // When the game is restarted, create a new deno process
+            p.peer.send("~\x1b[31mRestarting deno process...\x1B[0m\n")
+            createDenoProcessAndAppendToGames(projectName, p, peers, games, true)
           }
-          if (cmd) {
-            try {
-              cmd.exec(args, child, peers)
-            } catch (e) {
-              console.log(`There was an error executing the command: ${commandName}`)
-              console.log(e)
-            }
-          } else {
-            console.log("~\x1b[31mUnknown command: " + commandName + "\x1B[0m")
-          }
-          scriptOutput += data;
-          if (scriptOutput.length > 10000) {
-            p.denoProcess.kill()
-            p.peer.send("~\x1b[31mDeno process killed due to excessive output\x1B[0m")
-          }
-        });
-        child.stderr.on('error', function (data) {
-          data = data.toString();
-          p.peer.send("~" + data)
-          scriptOutput += data;
-        });
-        child.on('close', function (code) {
-          p.peer.send(`~Process finished with exit code ${code}`)
-          p.peer.send('deno-terminal-end')
-        });
-        
-        
-
-        p.denoProcess = child;
-
+          game.denoProcess.kill() // Kill the old process
+        } else {
+          p.peer.send(`~\x1b[36mdeno run ${denoProjPath}/server.js\x1B[0m\n`)
+          p.peer.send("~\x1b[31mStarting deno process...\x1B[0m\n")
+          createDenoProcessAndAppendToGames(projectName, p, peers, games, true)
+        }
 
       })();
     }
@@ -220,15 +250,62 @@ export default [
   },
   {
     name: "deno-kill",
-    exec: (args, p) => {
-      if (p.denoProcess) {
-        p.denoProcess.kill()
-        p.peer.send("~Process killed")
+    exec: (args, p, peers, games) => {
+      let game = games.find(g => g.name === p.playing)
+      if (!game) {
+        return p.peer.send("~\x1b[31mNo game to kill\x1B[0m\n")
+      }
+      if (game.denoProcess) {
+        game.denoProcess.kill()
+        p.peer.send("~\x1b[31mKilling deno process...\x1B[0m\n")
       } else {
-        p.peer.send("~Process not running")
+        p.peer.send("~Unknown deno error\n")///
       }
     }
 
+  },
+  {
+    name: "join-game",
+    exec: (args, p, peers, games) => {
+      (async () => {
+        let game = games.find(g => g.name == args)
+        if (!game) { // If the game doesn't exist, create it
+          createDenoProcessAndAppendToGames(args, p, peers, games)
+        } else if (game.players.includes(p.uid)) { // If the player is already in the game, do nothing
+          return p.peer.send("~\x1b[31mAlready in game\x1B[0m\n")
+        } else { // If the game exists, add the player to it
+          game.players.push(p.uid)
+          p.playing = game.name
+          p.peer.send("~\x1b[36mYou have joined the game\x1B[0m\n")
+        }
+
+        // Send a copy of the client html to the player
+        let data = await fs.readFile(`./deno/${args}/client.html`, 'utf8')
+        p.peer.send("deno-set-client " + data)
+      })();
+    }
+  },
+  {
+    name: "leave-game",
+    exec: (args, p, peers, games) => {
+      let game = games.find(g => g.name == p.playing)
+      if (!game) {// If the game doesn't exist, return
+        return p.peer.send("~\x1b[31mNo game to leave\x1B[0m\n")
+      }
+      if (!game.players.includes(p.uid)) {
+        // If the player isn't in the game, return
+        return p.peer.send("~\x1b[31mNot in game\x1B[0m\n")
+      }
+      game.players = game.players.filter(uid => uid != p.uid)
+      p.peer.send("~\x1b[36mYou have left the game\x1B[0m\n")
+
+      // If there are no players left, kill the process
+      if (game.players.length == 0) {
+        game.denoProcess.kill()
+        // Remove the game from the list
+        games.splice(games.indexOf(game), 1)
+      }
+    }
   },
   {
     name: "geo",
@@ -319,33 +396,46 @@ export default [
     }
   },
   {
-    name: "assign-local-id",
+    name: "get-guest-uid",
     exec: (args, p) => {
-      p.localId = args;
+      p.peer.send(`set-uid ${p.uid}`)
     }
   },
   {
-    name: "kam-create-account",
+    name: "sign-up",
     exec: (args, p) => {
       let username = args.split(" ")[0];
-      let password = args.split(" ")[1];
-      let accountData = {
-        username: username,
-        password: password
-      }
-      p.peer.send("kam-create-account " + JSON.stringify(accountData))
-    }
-  },
-  {
-    name: "kam-login",
-    exec: (args, p) => {
-      let username = args.split(" ")[0];
-      let password = args.split(" ")[1];
+      let password = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
       let accountData = {
         account: account,
         password: password
       }
-      p.peer.send("kam-login " + JSON.stringify(accountData))
+      p.peer.send(`set-username ${username}`)
+      p.peer.send(`set-password ${password}`)
+    }
+  },
+  {
+    name: "auto-login",
+    exec: (args, p) => {
+      let username = args.split(" ")[0];
+      let password = args.split(" ")[1];
+
+      // Check if username and password are valid
+      /// ...
+    }
+  },
+  {
+    name: "debug-games",
+    exec: (args, p, peers, games) => {
+      let gamesClean = games.map(g => {
+        return {
+          name: g.name,
+          players: g.players,
+          started: g.started,
+        }
+      })
+      console.log(gamesClean)
+      p.peer.send(`debug-games ${JSON.stringify(gamesClean)}`)
     }
   }
 ]

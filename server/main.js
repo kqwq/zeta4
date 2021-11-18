@@ -5,7 +5,7 @@ import fetch from 'node-fetch'
 import wrtc from 'wrtc'
 import Peer from 'simple-peer'
 import dotenv from 'dotenv'
-import metaCommands from "./commands/meta.js"
+import serverCommands from "./commands/server.js"
 
 // config.json tools
 dotenv.config()
@@ -29,20 +29,24 @@ if (!existsSync('ipdb.json')) {
   fs.writeFileSync('ipdb.json', JSON.stringify([], null, 2))
 }
 
+// uid tools
+let guestNumber = 0;
+function leftPad(num, size){  
+  return ('000000000' + num).substr(-size); 
+}
+
+
 // schema name: peerContext
 let peers = [
   // {
+  //   uid: "guest-12345", // Unique user id
   //   ipInfo: {...}, // Includes ip address, geolocation, etc
   //   connectionStep: 0, // (0=not connected, 1=connecting, 2=answered, 3=fully connected)
   //   offerLineNumber: offerLineNumber, // Line number of the offer answer
   //   peer: Peer,
   //   offer: {...}, // Signal offer from client
   //   answer: {...}, // Signal answer from server
-  //   game: {
-  //     GAME_NAME: "amongUs",
-  //     ... // Optionally use this space for player specific data
-  //   },
-  //
+  //   playing: "among-us-proj" // Currently playing
   //
   //   /* Temporary */
   //   _packetsFingerprint: "cf9a", // Fingerprint of the packets received
@@ -53,6 +57,16 @@ let peers = [
   //     }
   //   ],
   //   _packetsLength: 5,
+  // }
+]
+
+// schema name: gameContext
+let games = [
+  // {
+  //   name: "among-us-proj",
+  //   players: [ "guest-12345", "squishypill" ], // Array of player uids
+  //   denoProcess: DenoProcess, // Deno process
+  //   started: Date, // Date the game started
   // }
 ]
 
@@ -102,6 +116,8 @@ async function createNewPeer(peerContext) {
     peerContext.peer = peer
     console.log(`Peer connected!`);
     peerContext.connectionStep = 3
+    guestNumber++
+    peerContext.uid = "guest-" + leftPad(guestNumber, 5)
     // onPeerConnect(peer, peers)
   }).on('data', data => {
 
@@ -109,19 +125,20 @@ async function createNewPeer(peerContext) {
     var commandName, args, cmd;
     data = data.toString()
     if (data.startsWith('^')) { // If came from iframe
-      console.log(`Received command from iframe: ${data}`);
-      if (!peerContext.denoProcess) {
-        console.log(`Deno process not found!`);
-        return
+      // Search games for peerContet with same uid
+      let game = games.find(g => g.name === peerContext.playing)
+      if (game) {
+        clientToDeno(game.denoProcess, peerContext.uid, data.slice(1))
+      } else {
+        peerContext.peer.send(`~\x1b[31mPlayer ${peerContext.uid} is not in a project!\x1b[0m\n`)
       }
-      clientToDeno(peerContext.denoProcess, peerContext.ipInfo.ip, data.slice(1))
       return
     }
     if (data.startsWith('!')) { // If command format
       console.log(`Received command from meta: ${data}`);
       data = data.slice(1);
       [ commandName, args ] = data.split(/ (.+)/s)
-      cmd = metaCommands.find(x => x.name == commandName) // Global commands takes priority over game commands
+      cmd = serverCommands.find(x => x.name == commandName) // Global commands takes priority over game commands
       if (!cmd) {
         console.log(`Unknown command: ${commandName}`, args)
         peerContext.peer.send(`unknown-command ${commandName} ${args}`)
@@ -129,12 +146,12 @@ async function createNewPeer(peerContext) {
       }
     } else { // If wildcard format
       args = data
-      cmd = metaCommands.find(x => x.name == "*")
+      cmd = serverCommands.find(x => x.name == "*")
     }
 
     // Execute command
     try {
-      cmd.exec(args, peerContext, peers)
+      cmd.exec(args, peerContext, peers, games)
     } catch (e) {
       console.log(`There was an error executing the command: ${commandName}`)
       console.log(e)
@@ -157,7 +174,7 @@ async function createNewPeer(peerContext) {
   let offer = JSON.parse(sortedPackets.map(x => x.content).join(''))
   peerContext.offer = offer
   peerContext.offerLineNumber = parseInt(peerContext._packetsFingerprint.slice(0, 2), 16) // Line number of the answer in the link program (0-255)
-  peerContext.game = {}
+  peerContext.playing = null
   peer.signal(offer) // Trigger connection
 
   // Get IP info
