@@ -252,6 +252,7 @@
       align-items: flex-end;
       flex-wrap: wrap;
     }
+
     #editor-options {
       position: absolute;
       top: 40px;
@@ -285,17 +286,16 @@
 
 
     #view-html,
-    #view-view,
     #view-server,
     #view-stdout,
-    #view-iframe {
+    #view-view,
+    #home-games-project-join {
       position: absolute;
       top: 21px;
       right: 0;
       bottom: 0;
       left: 0;
     }
-
 
     #view-iframe {
       width: 100%;
@@ -395,8 +395,8 @@
 
   <div class="page mt-5" id="home-games-project-edit">
     <div id="view-server">function foo(items) {
-        var x = "All this is syntax highlighted";
-        return x;
+      var x = "All this is syntax highlighted";
+      return x;
     </div>
     <div id="view-html">
       <div id="editor-html">Loading HTML...</div>
@@ -688,7 +688,7 @@
         }
       }
     }, 1000 / 50) // 50 fps
-    
+
   </script>
 
   <script type>{
@@ -764,7 +764,7 @@
         chPage('home-games-project-join')
         iframe.srcdoc = "Loading..."
         document.getElementById('home-games-project-join').appendChild(iframe) // Move iframe to home-games-project-join page
-        send("!join-game " +myProject.name)
+        send("!join-game " + myProject.name)
       }
       function leaveProject() {
         send("!leave-game")
@@ -891,6 +891,10 @@
       // Page setup
       var page = "home"
       function chPage(newPage) {
+        // If old page was home-games-project-join, leave it
+        if (page == "home-games-project-join" && newPage != "home-games-project-join") {
+          send("!leave-game")
+        }
         function breadcrumbTextView(s) {
           s = s[0].toUpperCase() + s.slice(1)
           return s.replace("Edit", "edit").split("-").map(s => s.replace("Project", myProject.name))
@@ -956,7 +960,9 @@
         }
         console.log("%c" + data, 'background: #000; color: #ff00ff')
         let [firstArg, secondArg] = data.split(/ (.+)/s)
-        if (firstArg == "deno-terminal-end") {
+        if (firstArg == "!ping") {
+          send("!pong")
+        } else if (firstArg == "deno-terminal-end") {
           if (page === "home-games-project-edit") {
             ///term.nextLine() //useless I think?
           } else if (page === "home-games-project-join") {
@@ -1008,20 +1014,23 @@
         }
       }
 
-      var serverIp = ''; 
+      var serverIp = "173.79.147.118"
       var linkId = "5918360080531456"
 
       // Create 4-byte fingerprint and use that as answer line number
       var randomFingerprint = Math.random().toString(16).substring(2, 6)
       var answerLineNumber = parseInt(randomFingerprint.slice(0, 2), 16)
-      var peer
+      var peer = null
       var isConnected = false
 
       connectToServer()
       function connectToServer() {
         peer = new SimplePeer({
           initiator: true,
-          trickle: false
+          trickle: false,
+          config: {
+            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:global.stun.twilio.com:3478?transport=udp' }]
+          },
         }).on("signal", function (data) {
           console.log("%cCopy for manual input", "background: #000; font-size: x-large")
           console.log("%c" + "SDP_" + randomFingerprint + "_" + btoa(data.sdp), 'background: #000; color: #00ff00')
@@ -1089,8 +1098,7 @@
       }
 
       let connectionAttempts = 0
-      function attemptConnection(forceAttempt) {
-        parent.forceAttempt = forceAttempt
+      function attemptConnection() {
         console.log('Attempting to connect...');
         let url = `https://www.khanacademy.org/api/internal/scratchpads/${linkId}?callback=?`
         parent.$.getJSON(url, data => {
@@ -1109,7 +1117,7 @@
           // Detect a signal answer to my offer
 
           let serverOffer = linkProgramCode[answerLineNumber - 1]
-          if ((!serverOffer || !serverOffer.includes('answer=')) && !parent.forceAttempt) {
+          if (!serverOffer || !serverOffer.includes('answer=')) {
             connectionAttempts++
             if (connectionAttempts > 6) {
               document.getElementById('kam-status').textContent = "Server offline - contact Squishy."

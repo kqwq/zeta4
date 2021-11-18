@@ -39,6 +39,7 @@ function createDenoProcessAndAppendToGames(projectName, p, peers, games, isTesti
     data = data.toString();
     var cmd, args, commandName;
     if (data.startsWith("!")) {
+      console.log(`d: ${data}`);
       [commandName, args] = data.split(/ (.+)/s)
       cmd = denoCommands.find(c => c.name == commandName.substring(1))
     } else {
@@ -109,6 +110,10 @@ export default [
   {
     name: "ping",
     exec: (args, p) => p.peer.send("pong")
+  },
+  {
+    name: "pong",
+    exec: (args, p) => p.pinged = true
   },
   {
     name: "server-version",

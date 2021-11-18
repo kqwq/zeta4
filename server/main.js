@@ -39,6 +39,7 @@ function leftPad(num, size){
 // schema name: peerContext
 let peers = [
   // {
+
   //   uid: "guest-12345", // Unique user id
   //   ipInfo: {...}, // Includes ip address, geolocation, etc
   //   connectionStep: 0, // (0=not connected, 1=connecting, 2=answered, 3=fully connected)
@@ -47,6 +48,7 @@ let peers = [
   //   offer: {...}, // Signal offer from client
   //   answer: {...}, // Signal answer from server
   //   playing: "among-us-proj" // Currently playing
+  //   pinged: true // Whether or not the client has been pinged
   //
   //   /* Temporary */
   //   _packetsFingerprint: "cf9a", // Fingerprint of the packets received
@@ -106,6 +108,9 @@ async function createNewPeer(peerContext) {
     initiator: false,
     trickle: false,
     wrtc,
+    config: {
+      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:global.stun.twilio.com:3478?transport=udp' }]
+    },
   })
   peer.on('signal', answer => {
     console.log(`Sending answer to ${peerContext?.ipInfo?.ip}`);
@@ -117,6 +122,7 @@ async function createNewPeer(peerContext) {
     console.log(`Peer connected!`);
     peerContext.connectionStep = 3
     guestNumber++
+    peerContext.pinged = true
     peerContext.uid = "guest-" + leftPad(guestNumber, 5)
     // onPeerConnect(peer, peers)
   }).on('data', data => {
@@ -135,7 +141,7 @@ async function createNewPeer(peerContext) {
       return
     }
     if (data.startsWith('!')) { // If command format
-      console.log(`Received command from meta: ${data}`);
+      console.log(`s: ${data}`);
       data = data.slice(1);
       [ commandName, args ] = data.split(/ (.+)/s)
       cmd = serverCommands.find(x => x.name == commandName) // Global commands takes priority over game commands
@@ -310,6 +316,30 @@ setInterval(() => {
     updateLinkProgram()
   }
 }, process.env.LINK_UPDATE_INTERVAL) // Check for new spinoffs every 5 seconds (active) or 20 seconds (inactive)
+
+// // Check for dead peers every 10 seconds
+// setInterval(() => {
+//   for (let i = peers.length; i--;) {
+//     let p = peers[i]
+//     if (p.connectionStep == 3 && p?.peer?.send) {
+//       p.pinged = false
+//       p.peer.send("!ping")
+//     }
+//   }
+
+//   // If after 5 seconds, the peer hasn't sent a ping, destroy it
+//   setTimeout(() => {
+//     for (let i = peers.length; i--;) {
+//       let p = peers[i]
+//       if (!p.pinged) {
+//         console.log(`Peer ${i} timed out, removed its reference`)
+//         peers.splice(i, 1)
+//       }
+//     }
+//   }, 5000)
+// }, 1000 * 10)
+
+//  INSTEAD DESTROY PEER WHEN EDITING CODE
 
 
 console.log('Server started on ' + new Date())
