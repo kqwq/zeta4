@@ -281,7 +281,7 @@ export default [
 
         // Send a copy of the client html to the player
         let data = await fs.readFile(`./deno/${args}/client.html`, 'utf8')
-        p.peer.send("deno-set-client " + data)
+        p.peer.send("set-iframe " + data)
       })();
     }
   },
@@ -328,8 +328,8 @@ export default [
   },
   {
     name: "geos",
-    exec: (args, p, context) => {
-      let players = context.map(peerData => {
+    exec: (args, p, peers) => {
+      let players = peers.map(peerData => {
         let p = peerData.ipInfo;
         let svgLink = findFlagUrlByIso2Code(p.country);
         let countryName = getCountry(p.country).name;
@@ -345,6 +345,21 @@ export default [
         }
       })
       p.peer.send("geos " + JSON.stringify(players))
+    }
+  },
+  {
+    name: "globe",
+    exec: (args, p, peers) => {
+      let globeData = peers.map(peerData => {
+        let p = peerData.ipInfo;
+        let [lat, lng] = p.loc.split(",").map(x => parseFloat(x))
+        return {
+          lat: lat,
+          lng: lng,
+          uid: peerData.uid,
+        }
+      })
+      p.peer.send("globe " + JSON.stringify(globeData))
     }
   },
   {

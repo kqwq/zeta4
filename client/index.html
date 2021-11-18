@@ -287,7 +287,8 @@
     #view-html,
     #view-view,
     #view-server,
-    #view-stdout {
+    #view-stdout,
+    #view-iframe {
       position: absolute;
       top: 21px;
       right: 0;
@@ -461,6 +462,10 @@
 
     // Points
     var pointsData = []
+    function clearPoints() {
+      pointsData = []
+      globe.pointsData([])
+    }
     function addPoint(lat, lng, color) {
       var point = {
         lat,
@@ -671,7 +676,7 @@
     ppHide()
     ppKeyframe(1)
     setInterval(() => {
-      if (true || page == "login") {///
+      if (page == "login") {///
         if (ppAnimation == ppAnimationTarget) {
           return
         } else if (Math.abs(ppAnimation - ppAnimationTarget) < 0.001) {
@@ -682,7 +687,8 @@
           ppKeyframe(ppAnimation)
         }
       }
-    }, 1000 / 50)
+    }, 1000 / 50) // 50 fps
+    
   </script>
 
   <script type>{
@@ -754,11 +760,11 @@
 
       }
       function joinProject(projName) {
-        projName = projName ? projName : myProject.name;
+        myProject = projName ? projects.find(p => p.name == projName) : myProject;
         chPage('home-games-project-join')
         iframe.srcdoc = "Loading..."
         document.getElementById('home-games-project-join').appendChild(iframe) // Move iframe to home-games-project-join page
-        send("!join-game " + myProject.name)
+        send("!join-game " +myProject.name)
       }
       function leaveProject() {
         send("!leave-game")
@@ -899,7 +905,9 @@
         }).join(" &gt; ")
 
         // Special rules
-        if (page == "home-games-project-edit") {
+        if (page === "home") {
+          if (isConnected) send("!globe")
+        } else if (page == "home-games-project-edit") {
           document.getElementById("kam-views").style.display = "inline";
           chView("html");
           document.getElementById("view-view").appendChild(iframe); // Move iframe to home-games-project-edit page
@@ -969,6 +977,8 @@
         } else if (firstArg == 'deno-set-client') {
           projectClientCode = secondArg
           editorHtml.getSession().setValue(projectClientCode)
+        } else if (firstArg == 'set-iframe') {
+          iframe.srcdoc = secondArg
         } else if (firstArg == 'deno-add-project') {
           myProject = JSON.parse(secondArg)
           if (myProject.prevName) {
@@ -987,10 +997,18 @@
           document.getElementById("logged-in-as").innerText = uid
         } else if (firstArg == 'set-password') {
           localStorage.setItem("METAVERSE_PASSWORD", secondArg)
+        } else if (firstArg == 'globe') {
+          if (page === "home") {
+            let globeData = JSON.parse(secondArg)
+            clearPoints()
+            for (let gd of globeData) {
+              addPoint(gd.lat, gd.lng)
+            }
+          }
         }
       }
 
-      
+      var serverIp = ''; 
       var linkId = "5918360080531456"
 
       // Create 4-byte fingerprint and use that as answer line number

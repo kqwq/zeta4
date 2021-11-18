@@ -50,9 +50,8 @@ export default [
         recipientUid = recipientUid.slice(1);
       }
       for (let p of peers) {
-        if (true||p.uid === recipientUid) {
+        if (p?.peer?.send && (p.uid === recipientUid || recipientUid === "everyone")) {
           p.peer.send("^" + message);
-          return
         }
       }
     }
