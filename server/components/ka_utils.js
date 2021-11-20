@@ -28,8 +28,8 @@ async function login(username, password) {
 
 // Create config.json
 let config
-if (existsSync('config.json')) {
-  config = JSON.parse(fs.readFileSync('config.json'))
+if (existsSync('./storage/config.json')) {
+  config = JSON.parse(fs.readFileSync('./storage/config.json'))
 } else {
   config = {
     "kaas": "",
@@ -45,7 +45,7 @@ if (!config.kaas) {
   kaas = await login(username, password)
   console.log("Created new KAAS secret: " + kaas)
   config.kaas = kaas
-  fs.writeFileSync('config.json', JSON.stringify(config)) // Write to config.json
+  fs.writeFileSync('./storage/config.json', JSON.stringify(config)) // Write to config.json
 }
 let headers = {
   "content-type": "application/json",

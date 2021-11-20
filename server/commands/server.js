@@ -28,9 +28,11 @@ let starterClientHtmlCode = (name) => `<!DOCTYPE html>
 </body>
 </html>`;
 
+let denoPath = "./storage/deno";
+
 function createDenoProcessAndAppendToGames(projectName, p, peers, games, isTesting) {
   // Create instance of Deno
-  let denoProjPath = `./deno/${projectName}`
+  let denoProjPath = `${denoPath}/${projectName}`
   let child = spawn('deno', ['run', '--v8-flags=--max-old-space-size=256', `${denoProjPath}/server.js`])
   child.scriptOutput = "";
   child.isTesting = isTesting;
@@ -59,17 +61,17 @@ function createDenoProcessAndAppendToGames(projectName, p, peers, games, isTesti
     child.scriptOutput += data;
     if (child.scriptOutput.length > 10000) {
       child.kill()
-      p.peer.send("~\x1b[31mDeno process killed due to excessive output\x1B[0m\n")
+      p.send("~\x1b[31mDeno process killed due to excessive output\x1B[0m\n")
     }
   });
   child.stderr.on('data', function (err) {
     err = hidePersonalFilename(err.toString())
-    p.peer.send("~" + err)
+    p.send("~" + err)
     child.scriptOutput += err;
   });
   child.on('close', function (code) {
-    p.peer.send(`~Process finished with exit code ${code}\n`)
-    p.peer.send('deno-terminal-end')
+    p.send(`~Process finished with exit code ${code}\n`)
+    p.send('deno-terminal-end')
     for (let peer2 of peers) {
       if (peer2.playing === projectName) { // If the peer is playing the game, remove it
         peer2.playing = null
@@ -101,7 +103,7 @@ export default [
     name: "*",
     exec: (args, p) => {
       try {
-        p.peer.send("Wildcard command * recieved by server with data " + args.toString())
+        p.send("Wildcard command * recieved by server with data " + args.toString())
       } catch (e) {
         console.log("Missed input (p.peer is not assigned): " + args)
       }
@@ -109,7 +111,7 @@ export default [
   },
   {
     name: "ping",
-    exec: (args, p) => p.peer.send("pong")
+    exec: (args, p) => p.send("pong")
   },
   {
     name: "pong",
@@ -117,7 +119,7 @@ export default [
   },
   {
     name: "server-version",
-    exec: (args, p) => p.peer.send("beta")
+    exec: (args, p) => p.send("beta")
   },
   {
     name: "shutdown",
@@ -125,7 +127,7 @@ export default [
       if (timingSafeEqual(process.env.GLOBAL_PASSWORD, args)) {
         process.exit(0)
       } else {
-        p.peer.send("Wrong password")
+        p.send("Wrong password")
       }
     }
   },
@@ -134,12 +136,12 @@ export default [
     exec: (args, p) => {
       (async () => {
         let denoProjectList = []
-        let files = await fs.readdir("./deno")
+        let files = await fs.readdir(denoPath)
         for (let file of files) {
-          let info = await fs.readFile('./deno/' + file + '/info.json')
+          let info = await fs.readFile(`${denoPath}/${file}/info.json`)
           denoProjectList.push(JSON.parse(info.toString()))
         }
-        p.peer.send("deno-set-projects " + JSON.stringify(denoProjectList))
+        p.send("deno-set-projects " + JSON.stringify(denoProjectList))
       })();
     }
   },
@@ -148,19 +150,20 @@ export default [
     exec: (args, p) => {
       (async () => {
         let name = 'new-' + Math.random().toString().substring(14)
-        await fs.mkdir('./deno/' + name)
+        let denoProjectPath = `${denoPath}/${name}`
+        await fs.mkdir(denoProjectPath)
         let newProject = {
           name: name,
           desc: `Description for ${name}`,
           version: "0.1",
           author: "unknown",
         }
-        await fs.writeFile('./deno/' + name + '/info.json', JSON.stringify(newProject))
-        await fs.writeFile('./deno/' + name + '/server.js', starterServerJSCode)
-        await fs.writeFile('./deno/' + name + '/client.html', starterClientHtmlCode(name))
-        p.peer.send("deno-set-server " + starterServerJSCode)
-        p.peer.send("deno-set-client " + starterClientHtmlCode(name))
-        p.peer.send("deno-add-project " + JSON.stringify(newProject))
+        await fs.writeFile(denoProjectPath + '/info.json', JSON.stringify(newProject))
+        await fs.writeFile(denoProjectPath + '/server.js', starterServerJSCode)
+        await fs.writeFile(denoProjectPath + '/client.html', starterClientHtmlCode(name))
+        p.send("deno-set-server " + starterServerJSCode)
+        p.send("deno-set-client " + starterClientHtmlCode(name))
+        p.send("deno-add-project " + JSON.stringify(newProject))
       })();
     }
   },
@@ -171,11 +174,11 @@ export default [
         let info = JSON.parse(args)
         // Rename the old folder
         if (info.name != info.prevName) {
-          await fs.rename('./deno/' + info.prevName, './deno/' + info.name)
+          await fs.rename(`${denoPath}/${info.prevName}`, `${denoPath}/${info.name}`)
         }
-        await fs.writeFile('./deno/' + info.name + '/info.json', JSON.stringify(info))
+        await fs.writeFile(`${denoPath}/${info.name}/info.json`, JSON.stringify(info))
         if (info.name != info.prevName) {
-          p.peer.send("deno-add-project " + JSON.stringify(info))
+          p.send("deno-add-project " + JSON.stringify(info))
         }
       })();
     }
@@ -185,8 +188,8 @@ export default [
     exec: (args, p) => {
       (async () => {
         let name = args
-        await fs.rmdir('./deno/' + name, { recursive: true })
-        p.peer.send("deno-remove-project " + name)
+        await fs.rmdir(`${denoPath}/${name}`, { recursive: true })
+        p.send("deno-remove-project " + name)
       })();
     }
   },
@@ -194,10 +197,10 @@ export default [
     name: "deno-get-code",
     exec: (args, p) => {
       (async () => {
-        let data = await fs.readFile(`./deno/${args}/server.js`, 'utf8')
-        p.peer.send("deno-set-server " + data)
-        data = await fs.readFile(`./deno/${args}/client.html`, 'utf8')
-        p.peer.send("deno-set-client " + data)
+        let data = await fs.readFile(`${denoPath}/${args}/server.js`, 'utf8')
+        p.send("deno-set-server " + data)
+        data = await fs.readFile(`${denoPath}/${args}/client.html`, 'utf8')
+        p.send("deno-set-client " + data)
       })();
     }
   },
@@ -205,8 +208,8 @@ export default [
     name: "deno-get-client",
     exec: (args, p) => {
       (async () => {
-        data = await fs.readFile(`./deno/${args}/client.html`, 'utf8')
-        p.peer.send("deno-set-client " + data)
+        data = await fs.readFile(`${denoPath}/${args}/client.html`, 'utf8')
+        p.send("deno-set-client " + data)
       })();
     }
   },
@@ -215,9 +218,9 @@ export default [
     exec: (args, p) => {
       (async () => {
         let argData = JSON.parse(args)
-        let denoProjPath = `./deno/${argData.project}`
+        let denoProjPath = `${denoPath}/${argData.project}`
         await fs.writeFile(`${denoProjPath}/client.html`, argData.code)
-        p.peer.send("deno-save-client-success")
+        p.send("deno-save-client-success")
       })();
     }
   },
@@ -229,7 +232,7 @@ export default [
         // Define vars
         let argData = JSON.parse(args)
         let projectName = argData.project
-        let denoProjPath = `./deno/${projectName}`
+        let denoProjPath = `${denoPath}/${projectName}`
 
         // Write demo server code
         await fs.writeFile(`${denoProjPath}/server.js`, argData.code)
@@ -238,13 +241,13 @@ export default [
         let game = games.find(g => g.name === projectName) // Check if the game is already running
         if (game) {
           game.onRestart = () => { // When the game is restarted, create a new deno process
-            p.peer.send("~\x1b[31mRestarting deno process...\x1B[0m\n")
+            p.send("~\x1b[31mRestarting deno process...\x1B[0m\n")
             createDenoProcessAndAppendToGames(projectName, p, peers, games, true)
           }
           game.denoProcess.kill() // Kill the old process
         } else {
-          p.peer.send(`~\x1b[36mdeno run ${denoProjPath}/server.js\x1B[0m\n`)
-          p.peer.send("~\x1b[31mStarting deno process...\x1B[0m\n")
+          p.send(`~\x1b[36mdeno run ${denoProjPath}/server.js\x1B[0m\n`)
+          p.send("~\x1b[31mStarting deno process...\x1B[0m\n")
           createDenoProcessAndAppendToGames(projectName, p, peers, games, true)
         }
 
@@ -258,13 +261,13 @@ export default [
     exec: (args, p, peers, games) => {
       let game = games.find(g => g.name === p.playing)
       if (!game) {
-        return p.peer.send("~\x1b[31mNo game to kill\x1B[0m\n")
+        return p.send("~\x1b[31mNo game to kill\x1B[0m\n")
       }
       if (game.denoProcess) {
         game.denoProcess.kill()
-        p.peer.send("~\x1b[31mKilling deno process...\x1B[0m\n")
+        p.send("~\x1b[31mKilling deno process...\x1B[0m\n")
       } else {
-        p.peer.send("~Unknown deno error\n")///
+        p.send("~Unknown deno error\n")///
       }
     }
 
@@ -277,16 +280,16 @@ export default [
         if (!game) { // If the game doesn't exist, create it
           createDenoProcessAndAppendToGames(args, p, peers, games)
         } else if (game.players.includes(p.uid)) { // If the player is already in the game, do nothing
-          return p.peer.send("~\x1b[31mAlready in game\x1B[0m\n")
+          return p.send("~\x1b[31mAlready in game\x1B[0m\n")
         } else { // If the game exists, add the player to it
           game.players.push(p.uid)
           p.playing = game.name
-          p.peer.send("~\x1b[36mYou have joined the game\x1B[0m\n")
+          p.send("~\x1b[36mYou have joined the game\x1B[0m\n")
         }
 
         // Send a copy of the client html to the player
-        let data = await fs.readFile(`./deno/${args}/client.html`, 'utf8')
-        p.peer.send("set-iframe " + data)
+        let data = await fs.readFile(`${denoPath}/${args}/client.html`, 'utf8')
+        p.send("set-iframe " + data)
       })();
     }
   },
@@ -295,14 +298,14 @@ export default [
     exec: (args, p, peers, games) => {
       let game = games.find(g => g.name == p.playing)
       if (!game) {// If the game doesn't exist, return
-        return p.peer.send("~\x1b[31mNo game to leave\x1B[0m\n")
+        return p.send("~\x1b[31mNo game to leave\x1B[0m\n")
       }
       if (!game.players.includes(p.uid)) {
         // If the player isn't in the game, return
-        return p.peer.send("~\x1b[31mNot in game\x1B[0m\n")
+        return p.send("~\x1b[31mNot in game\x1B[0m\n")
       }
       game.players = game.players.filter(uid => uid != p.uid)
-      p.peer.send("~\x1b[36mYou have left the game\x1B[0m\n")
+      p.send("~\x1b[36mYou have left the game\x1B[0m\n")
 
       // If there are no players left, kill the process
       if (game.players.length == 0) {
@@ -328,7 +331,7 @@ export default [
         dstOffset: timezone.dstOffset,
         flag: svgLink
       }
-      peerData.peer.send("geo " + JSON.stringify(geoData))
+      peerData.send("geo " + JSON.stringify(geoData))
     }
   },
   {
@@ -349,7 +352,7 @@ export default [
           flag: svgLink
         }
       })
-      p.peer.send("geos " + JSON.stringify(players))
+      p.send("geos " + JSON.stringify(players))
     }
   },
   {
@@ -364,7 +367,7 @@ export default [
           uid: peerData.uid,
         }
       })
-      p.peer.send("globe " + JSON.stringify(globeData))
+      p.send("globe " + JSON.stringify(globeData))
     }
   },
   {
@@ -396,7 +399,7 @@ export default [
         "If you tell the truth, you don’t have to remember anything.",
         "A friend is someone who knows all about you and still"
       ]
-      p.peer.send(facts[Math.floor(Math.random() * facts.length)])
+      p.send(facts[Math.floor(Math.random() * facts.length)])
     }
   },
   {
@@ -406,19 +409,19 @@ export default [
       let min = parseInt(args[0]) || 0
       let max = parseInt(args[1]) || 100
       let num = Math.floor(Math.random() * (max - min + 1)) + min
-      p.peer.send(`randint ${num}`)
+      p.send(`randint ${num}`)
     }
   },
   {
     name: "date-now",
     exec: (args, p) => {
-      p.peer.send(`date-now ${new Date().toISOString()}`)
+      p.send(`date-now ${new Date().toISOString()}`)
     }
   },
   {
     name: "get-guest-uid",
     exec: (args, p) => {
-      p.peer.send(`set-uid ${p.uid}`)
+      p.send(`set-uid ${p.uid}`)
     }
   },
   {
@@ -430,8 +433,8 @@ export default [
         account: account,
         password: password
       }
-      p.peer.send(`set-username ${username}`)
-      p.peer.send(`set-password ${password}`)
+      p.send(`set-username ${username}`)
+      p.send(`set-password ${password}`)
     }
   },
   {
@@ -455,7 +458,7 @@ export default [
         }
       })
       console.log(gamesClean)
-      p.peer.send(`debug-games ${JSON.stringify(gamesClean)}`)
+      p.send(`debug-games ${JSON.stringify(gamesClean)}`)
     }
   }
 ]

@@ -1,9 +1,4 @@
 */.env
 */node_modules
-server/config.json
-server/ipdb.json
-server/deno
-server/deno - Copy
-server/ManualInput.txt
-logs
-*/logs
+server/storage/*
+!server/storage/.gitkeep
