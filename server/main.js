@@ -1,3 +1,18 @@
+/*
+
+Steps to connect
+1. 
+
+
+
+*/
+
+
+
+
+
+
+
 import Turn from 'node-turn'
 import fs, { existsSync } from 'fs'
 import { createProgram, updateProgram } from './ka_utils.js'
@@ -72,29 +87,6 @@ let games = [
   // }
 ]
 
-// Manual input
-var manualInputUsed = false
-fs.watchFile('ManualInput.txt', (curr, prev) => {
-  let parts = fs.readFileSync('ManualInput.txt').toString().split('_')
-  if (parts?.[0] == 'SDP') {
-    fs.writeFileSync('ManualInput.txt', 'READ')
-    let peer = {
-      connectionStep: 1,
-      _packetsFingerprint: parts[1],
-      _packets: [{
-        index: 0,
-        content: JSON.stringify({
-          type: "offer",
-          sdp: atob(parts[2]),
-        })
-      }],
-      _packetsLength: 1
-    }
-    manualInputUsed = true
-    peers.push(peer)
-    createNewPeer(peer)
-  }
-})
 
 // Handle client-to-deno data transfer
 function clientToDeno(denoProcess, recipient, message) {
@@ -113,7 +105,6 @@ async function createNewPeer(peerContext) {
     },
   })
   peer.on('signal', answer => {
-    console.log(`Sending answer to ${peerContext?.ipInfo?.ip}`);
     peerContext.connectionStep = 2
     peerContext.answer = answer
     updateLinkProgram()
@@ -122,7 +113,6 @@ async function createNewPeer(peerContext) {
     console.log(`Peer connected!`);
     peerContext.connectionStep = 3
     guestNumber++
-    peerContext.pinged = true
     peerContext.uid = "guest-" + leftPad(guestNumber, 5)
     // onPeerConnect(peer, peers)
   }).on('data', data => {
@@ -171,7 +161,6 @@ async function createNewPeer(peerContext) {
     console.log(`Peer #${ind} closed!`);
   }).on('error', err => {
     console.log(`Peer error!`, err);
-    peer.destroy()
   })
 
   // Stitch together the offer packets

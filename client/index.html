@@ -1014,7 +1014,7 @@
         }
       }
 
-      var serverIp = "173.79.147.118"
+      var serverIp = "192.168.1.176"
       var linkId = "5918360080531456"
 
       // Create 4-byte fingerprint and use that as answer line number
@@ -1124,7 +1124,7 @@
               console.error("Connection error: Link Program is unresponsive. Please contact Squishy.")
               return
             }
-            setTimeout(attemptConnection, 2000) // Wait 2 seconds and try again
+            setTimeout(attemptConnection, 1000) // Wait 1 second and try again
             return
           }
 
