@@ -9,310 +9,144 @@ import denoCommands from './deno.js';
 
 dotenv.config();
 
-const hidePersonalFilename = (filename) => {
-  return filename.replace(/file:\/\/\/C:\/Users\/Student\/Code\/KA2\/zeta4\/server\/deno\//g, '')
+function sanitize(str) {
+  return str.replace(/[^a-zA-Z0-9_\-]/g, '')
 }
-
-let starterServerJSCode = `console.log('Hello world!');`;
-let starterClientHtmlCode = (name) => `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${name}</title>
-</head>
-<body>
-    <h1>${name}</h1>
-    <p>This is your KA metaverse project's HTML code. Your project is stored in the cloud and can be accessed from anywhere.</p>
-    <p>To save, click the save button in the top right corner of the output window.</p>
-</body>
-</html>`;
 
 let denoPath = "./storage/deno";
 
-function createDenoProcessAndAppendToGames(projectName, p, peers, games, isTesting) {
-  // Create instance of Deno
-  let denoProjPath = `${denoPath}/${projectName}`
-  let child = spawn('deno', ['run', '--v8-flags=--max-old-space-size=256', `${denoProjPath}/server.js`])
-  child.scriptOutput = "";
-  child.isTesting = isTesting;
-  child.stdout.setEncoding('utf8');
-  child.stdout.on('data', function (data) {
-    data = data.toString();
-    var cmd, args, commandName;
-    if (data.startsWith("!")) {
-      console.log(`d: ${data}`);
-      [commandName, args] = data.split(/ (.+)/s)
-      cmd = denoCommands.find(c => c.name == commandName.substring(1))
-    } else {
-      args = data
-      cmd = denoCommands.find(c => c.name == "*")
-    }
-    if (cmd) {
-      try {
-        cmd.exec(args, child, peers)
-      } catch (e) {
-        console.log(`There was an error executing the command: ${commandName}`)
-        console.log(e)
-      }
-    } else {
-      console.log("~\x1b[31mUnknown command: " + commandName + "\x1B[0m")
-    }
-    child.scriptOutput += data;
-    if (child.scriptOutput.length > 10000) {
-      child.kill()
-      p.send("~\x1b[31mDeno process killed due to excessive output\x1B[0m\n")
-    }
-  });
-  child.stderr.on('data', function (err) {
-    err = hidePersonalFilename(err.toString())
-    p.send("~" + err)
-    child.scriptOutput += err;
-  });
-  child.on('close', function (code) {
-    p.send(`~Process finished with exit code ${code}\n`)
-    p.send('deno-terminal-end')
-    for (let peer2 of peers) {
-      if (peer2.playing === projectName) { // If the peer is playing the game, remove it
-        peer2.playing = null
-      }
-    }
-    // Remove the game from the list of games
-    let [gameRemoved] = games.splice(games.findIndex(g => g.name === projectName), 1)
 
-    // Restart the game if testing
-    if (gameRemoved && gameRemoved.onRestart) {
-      gameRemoved.onRestart()
-    }
-  });
-
-
-  // Add the game to the list of games
-  games.push({
-    name: projectName,
-    denoProcess: child,
-    players: [p.uid],
-    started: new Date()
-  })
-  p.playing = projectName
-
-}
 
 export default [
-  {
-    name: "*",
-    exec: (args, p) => {
-      try {
-        p.send("Wildcard command * recieved by server with data " + args.toString())
-      } catch (e) {
-        console.log("Missed input (p.peer is not assigned): " + args)
-      }
-    }
-  },
   {
     name: "ping",
     exec: (args, p) => p.send("pong")
   },
   {
-    name: "pong",
-    exec: (args, p) => p.pinged = true
-  },
-  {
     name: "server-version",
-    exec: (args, p) => p.send("beta")
+    exec: (args, p) => p.send("4.1")
   },
   {
     name: "shutdown",
     exec: (args, p) => {
       if (timingSafeEqual(process.env.GLOBAL_PASSWORD, args)) {
-        process.exit(0)
+        p.send("shutdown - Shutting down in 1 second...")
+        setTimeout(() => {
+          process.exit(0)
+        }, 1000)
       } else {
-        p.send("Wrong password")
+        p.send("shutdown - Wrong password")
       }
     }
   },
   {
     name: "deno-get-projects",
-    exec: (args, p) => {
-      (async () => {
-        let denoProjectList = []
-        let files = await fs.readdir(denoPath)
-        for (let file of files) {
-          let info = await fs.readFile(`${denoPath}/${file}/info.json`)
-          denoProjectList.push(JSON.parse(info.toString()))
-        }
-        p.send("deno-set-projects " + JSON.stringify(denoProjectList))
-      })();
+    exec: async (args, p, peers, rm, fm) => {
+      let allInfo = await fm.getAllInfo()
+      p.send("deno-set-projects " + JSON.stringify(allInfo))
     }
   },
   {
     name: "deno-create-project",
-    exec: (args, p) => {
-      (async () => {
-        let name = 'new-' + Math.random().toString().substring(14)
-        let denoProjectPath = `${denoPath}/${name}`
-        await fs.mkdir(denoProjectPath)
-        let newProject = {
-          name: name,
-          desc: `Description for ${name}`,
-          version: "0.1",
-          author: "unknown",
-        }
-        await fs.writeFile(denoProjectPath + '/info.json', JSON.stringify(newProject))
-        await fs.writeFile(denoProjectPath + '/server.js', starterServerJSCode)
-        await fs.writeFile(denoProjectPath + '/client.html', starterClientHtmlCode(name))
-        p.send("deno-set-server " + starterServerJSCode)
-        p.send("deno-set-client " + starterClientHtmlCode(name))
-        p.send("deno-add-project " + JSON.stringify(newProject))
-      })();
+    exec: async (args, p, peers, rm, fm) => {
+      let response = await fm.createProject(JSON.parse(args))
+      if (response) {
+        p.send("deno-set-server " + response.server)
+        p.send("deno-set-client " + response.client)
+        p.send("deno-add-project " + JSON.stringify(response.info))
+      }
     }
   },
   {
     name: "deno-update-info",
-    exec: (args, p) => {
-      (async () => {
-        let info = JSON.parse(args)
-        // Rename the old folder
-        if (info.name != info.prevName) {
-          await fs.rename(`${denoPath}/${info.prevName}`, `${denoPath}/${info.name}`)
-        }
-        await fs.writeFile(`${denoPath}/${info.name}/info.json`, JSON.stringify(info))
-        if (info.name != info.prevName) {
-          p.send("deno-add-project " + JSON.stringify(info))
-        }
-      })();
+    exec: async (args, p, peers, rm, fm) => {
+      let newInfo = JSON.parse(args)
+      await fm.setInfo(newInfo.name, newInfo, p.uid)
     }
   },
   {
     name: "deno-delete-project",
-    exec: (args, p) => {
-      (async () => {
-        let name = args
-        await fs.rmdir(`${denoPath}/${name}`, { recursive: true })
-        p.send("deno-remove-project " + name)
-      })();
+    exec: async (args, p, peers, rm, fm) => {
+      await fm.deleteProject(args)
+      p.send("deno-remove-project " + args)
     }
   },
   {
     name: "deno-get-code",
-    exec: (args, p) => {
-      (async () => {
-        let data = await fs.readFile(`${denoPath}/${args}/server.js`, 'utf8')
-        p.send("deno-set-server " + data)
-        data = await fs.readFile(`${denoPath}/${args}/client.html`, 'utf8')
-        p.send("deno-set-client " + data)
-      })();
+    exec: async (args, p, peers, rm, fm) => {
+      let serverCode = await fm.getServer(args)
+      p.send("deno-set-server " + serverCode)
+      let clientCode = await fm.getClient(args)
+      p.send("deno-set-client " + clientCode)
     }
   },
   {
     name: "deno-get-client",
-    exec: (args, p) => {
-      (async () => {
-        data = await fs.readFile(`${denoPath}/${args}/client.html`, 'utf8')
-        p.send("deno-set-client " + data)
-      })();
+    exec: async (args, p, peers, rm, fm) => {
+      let clientCode = await fm.getClient(args)
+      p.send("deno-set-client " + clientCode)
     }
   },
-  {
+  { 
     name: "deno-save-client",
-    exec: (args, p) => {
-      (async () => {
-        let argData = JSON.parse(args)
-        let denoProjPath = `${denoPath}/${argData.project}`
-        await fs.writeFile(`${denoProjPath}/client.html`, argData.code)
-        p.send("deno-save-client-success")
-      })();
+    exec: async (args, p, peers, rm, fm) => {
+      let argData = JSON.parse(args)
+      await fm.setClient(argData.project, argData.code, p.uid)
+      p.send("deno-save-client-success")
     }
   },
   {
     name: "deno-save-and-run-server",
-    exec: (args, p, peers, games) => {
-      (async () => {
+    exec: async (args, p, peers, rm, fm) => {
+      let argData = JSON.parse(args)
+      p.send(`~\x1b[36mdeno run ${argData.project}/server.js\x1B[0m\n`)
+      await fm.setServer(argData.project, argData.code, p.uid)
+      p.send("~\x1b[31mStarting deno process...\x1B[0m\n")
+      rm.createRoom(argData.project, true, [p])
 
-        // Define vars
-        let argData = JSON.parse(args)
-        let projectName = argData.project
-        let denoProjPath = `${denoPath}/${projectName}`
 
-        // Write demo server code
-        await fs.writeFile(`${denoProjPath}/server.js`, argData.code)
+      ///p.send("~\x1b[31mRestarting deno process...\x1B[0m\n")
 
-        // Attach to the games list
-        let game = games.find(g => g.name === projectName) // Check if the game is already running
-        if (game) {
-          game.onRestart = () => { // When the game is restarted, create a new deno process
-            p.send("~\x1b[31mRestarting deno process...\x1B[0m\n")
-            createDenoProcessAndAppendToGames(projectName, p, peers, games, true)
-          }
-          game.denoProcess.kill() // Kill the old process
-        } else {
-          p.send(`~\x1b[36mdeno run ${denoProjPath}/server.js\x1B[0m\n`)
-          p.send("~\x1b[31mStarting deno process...\x1B[0m\n")
-          createDenoProcessAndAppendToGames(projectName, p, peers, games, true)
-        }
 
-      })();
+
     }
 
 
   },
   {
     name: "deno-kill",
-    exec: (args, p, peers, games) => {
-      let game = games.find(g => g.name === p.playing)
-      if (!game) {
-        return p.send("~\x1b[31mNo game to kill\x1B[0m\n")
-      }
-      if (game.denoProcess) {
-        game.denoProcess.kill()
+    exec: (args, p, peers, rm) => {
+      if (p.room) {
+        rm.removeRooms(p.room.name)
         p.send("~\x1b[31mKilling deno process...\x1B[0m\n")
       } else {
-        p.send("~Unknown deno error\n")///
+        return p.send("~\x1b[31mNo game to kill\x1B[0m\n")
       }
     }
-
   },
   {
     name: "join-game",
-    exec: (args, p, peers, games) => {
-      (async () => {
-        let game = games.find(g => g.name == args)
-        if (!game) { // If the game doesn't exist, create it
-          createDenoProcessAndAppendToGames(args, p, peers, games)
-        } else if (game.players.includes(p.uid)) { // If the player is already in the game, do nothing
-          return p.send("~\x1b[31mAlready in game\x1B[0m\n")
-        } else { // If the game exists, add the player to it
-          game.players.push(p.uid)
-          p.playing = game.name
-          p.send("~\x1b[36mYou have joined the game\x1B[0m\n")
-        }
+    exec: async(args, p, peers, gm, fm) => {
 
-        // Send a copy of the client html to the player
-        let data = await fs.readFile(`${denoPath}/${args}/client.html`, 'utf8')
-        p.send("set-iframe " + data)
-      })();
+      if (p.room === args) {
+        return p.send("~\x1b[31mAlready in game\x1B[0m\n")
+      }
+
+      gm.addPlayer(p, args)
+      p.send("~\x1b[36mYou have joined the game\x1B[0m\n")
+
+      let data = await fs.readFile(`${denoPath}/${args}/client.html`, 'utf8')
+      p.send("set-iframe " + data)
     }
   },
   {
     name: "leave-game",
-    exec: (args, p, peers, games) => {
-      let game = games.find(g => g.name == p.playing)
-      if (!game) {// If the game doesn't exist, return
-        return p.send("~\x1b[31mNo game to leave\x1B[0m\n")
-      }
-      if (!game.players.includes(p.uid)) {
-        // If the player isn't in the game, return
+    exec: (args, p, peers, rm, fm) => {
+      if (p.room === null) {
         return p.send("~\x1b[31mNot in game\x1B[0m\n")
       }
-      game.players = game.players.filter(uid => uid != p.uid)
+      rm.removePlayer(p)
       p.send("~\x1b[36mYou have left the game\x1B[0m\n")
-
-      // If there are no players left, kill the process
-      if (game.players.length == 0) {
-        game.denoProcess.kill()
-        // Remove the game from the list
-        games.splice(games.indexOf(game), 1)
-      }
     }
   },
   {
@@ -425,6 +259,20 @@ export default [
     }
   },
   {
+    name: "change-guest-uid",
+    exec: (args, p, peers) => {
+      // Check if the new uid is already taken
+      let newUid = "-" + sanitize(args).slice(0, 30) + "-"
+      let taken = peers.some(peerData => peerData.uid === newUid)
+      if (taken) {
+        p.send("set-uid-error Already taken")
+      } else {
+        p.uid = newUid
+        p.send(`set-uid ${newUid}`)
+      }
+    }
+  },
+  {
     name: "sign-up",
     exec: (args, p) => {
       let username = args.split(" ")[0];
@@ -448,17 +296,9 @@ export default [
     }
   },
   {
-    name: "debug-games",
-    exec: (args, p, peers, games) => {
-      let gamesClean = games.map(g => {
-        return {
-          name: g.name,
-          players: g.players,
-          started: g.started,
-        }
-      })
-      console.log(gamesClean)
-      p.send(`debug-games ${JSON.stringify(gamesClean)}`)
+    name: "rooms",
+    exec: (args, p, peers, rm, fm) => {
+      p.send("rooms " + JSON.stringify(rm.repr()))
     }
   }
 ]

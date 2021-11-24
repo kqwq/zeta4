@@ -76,6 +76,7 @@ class KALink {
     this.turnServer = turnServer
     this.uid = getNextUid()
     this.peer = null
+    this.ipInfo = {}
     this.fingerprint = fingerprint
     this.packetLength = packetLength
     this.packets = []
@@ -137,7 +138,8 @@ class KALink {
 
     // Get IP info
     let ipAddress = offer.sdp.match(/(?<=IP4 ).+/gm)[1]
-    this.getIpInfo(ipAddress)
+    this.getIpInfo(ipAddress) // Practically, this always finishes before the peer connection is established,
+                              // so no need to wait for it to finish
   }
 
   async getIpInfo(ipAddress) {
@@ -189,7 +191,6 @@ class TurnListener {
   }
 
   onSdpPacket(content) {
-    console.log('onSdpPacket', content.slice(0, 40) + '...');
     try {
       var packetIndex = parseInt(content.slice(0, 1), 16)
       var packetLength = parseInt(content.slice(1, 2), 16)
@@ -228,7 +229,7 @@ class TurnListener {
   }
 
   connectAsPeer(link) {
-    this.onNewPeerCallback(link.uid, link.peer)
+    this.onNewPeerCallback(link.uid, link.peer, link.ipInfo)
   }
 
 }

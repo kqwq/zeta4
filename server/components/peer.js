@@ -1,63 +1,69 @@
 
 
 import serverCommands from "../commands/server.js"
+import { RoomManager } from "./roomManager.js"
+import { FileManager } from "./fileManager.js"
 
 let peers = []
-let games;
+let roomManager = new RoomManager()
+let fileManager = new FileManager()
+
+/**
+ * 
+ * @param {*} denoProcess 
+ * @param {*} recipient 
+ * @param {*} message 
+ */
+function clientToDeno(room, recipient, message) {
+  room?.denoProcess.stdin.write("@" + recipient + " " + message + "\n");
+}
+
 
 class Peer {
-  constructor(uid, peer) {
+  constructor(uid, peer, ipInfo) {
     peers.push(this)
     this.uid = uid;
     this.peer = peer;
-    this.peer.on('data', this.onData);
-    this.playing = null;
+    this.room = null;
+    this.ipInfo = ipInfo;
+
+    // Change on-data event
+    this.peer.removeAllListeners('data')
+    this.peer.on('data', (data) => this.onData(data));
   }
 
   send(data) {
     this.peer.send(data);
   }
 
-  onData(data) {
+  async onData(data) {
+    // Log data
     data = data.toString()
-    console.log("peer.js: onData: data:", data);
-    console.log(peers.length, "peers");
-
+    fileManager.log(this.uid, data)
 
     // Find command
     var commandName, args, cmd;
-    data = data.toString()
-    if (data.startsWith('^')) { // If came from iframe
-      // Find game that this peer is playing
-      let game = games.find(g => g.name === this.playing)
-      if (game) {
-        clientToDeno(game.denoProcess, this.uid, data.slice(1))
-      } else {
-        this.send(`~\x1b[31mPlayer ${this.uid} is not in a project!\x1b[0m\n`)
-      }
+    if (data.startsWith('^')) { // Caret command (to deno process)
+      ///console.log("Caret command", data, this.room?.repr(), !!this.room?.denoProcess);
+      clientToDeno(this.room, this.uid, data.slice(1));
       return
-    }
-    if (data.startsWith('!')) { // If command format
-      console.log(`s: ${data}`);
+    } else if (data.startsWith('!')) { // Band command (to server)
       data = data.slice(1);
       [commandName, args] = data.split(/ (.+)/s)
       cmd = serverCommands.find(x => x.name == commandName) // Global commands takes priority over game commands
       if (!cmd) {
-        console.log(`Unknown command: ${commandName}`, args)
         this.send(`unknown-command ${commandName} ${args}`)
         return
       }
-    } else { // If wildcard format
-      args = data
-      cmd = serverCommands.find(x => x.name == "*")
-    }
+    } 
 
     // Execute command
     try {
-      cmd.exec(args, this, peers, games)
+      if (cmd) await cmd.exec(args, this, peers, roomManager, fileManager)
     } catch (e) {
       console.log(`There was an error executing the command: ${commandName}`)
       console.log(e)
+      fileManager.logError(this.uid, e)
     }
   }
 }

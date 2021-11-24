@@ -338,7 +338,7 @@
 
     <div id="home-instructions-container">
       <span id="home-instructions"></span>
-      <span>Logged in as <span id="logged-in-as"></span></span>
+      <span id="logged-in-as-container" style="display:none">Logged in as <span id="logged-in-as"></span> <a href="javascript:void(0)" onclick="chName()">edit name</a></span>
     </div>
   </div>
 
@@ -446,8 +446,8 @@
   <!-- SCRIPT.HOME -->
   <script type>
     var myGeo = {
-      lat: 38.7957,
-      lng: -77.613
+      lat: 0,
+      lng: 0
     }
     var serverGeo = {
       lat: 38,
@@ -688,6 +688,18 @@
         }
       }
     }, 1000 / 50) // 50 fps
+
+    function chName() {
+      let name = prompt("Enter your name: ")
+      if (name == null) {
+        return
+      }
+      name = name.trim()
+      
+      console.log(name, "hello");
+      send("!change-guest-uid " +  name)
+
+    }
 
   </script>
 
@@ -940,7 +952,7 @@
         if (data.startsWith("~")) {
           // Send message to terminal if it is open
           if (page == "home-games-project-edit") {
-            term.write((data.slice(1)).replace(/\x07/, "\x1b[31m[DEBUG]\x1b[0m ").replace(/\n/g, "\r\n"))
+            term.write((data.slice(1)).replace(/\x07/g, "\x1b[31m[DEBUG]\x1b[0m ").replace(/\n/g, "\r\n"))
           }
           return
         }
@@ -953,21 +965,23 @@
           // Also send message to iframe
           iframe?.contentWindow?.postMessage(data.slice(1), '*');
           return
-        } else {
-          if (data.startsWith("\\^")) {
-            data = data.slice(1)
-          }
         }
         console.log("%c" + data, 'background: #000; color: #ff00ff')
         let [firstArg, secondArg] = data.split(/ (.+)/s)
         if (firstArg == "!ping") {
           send("!pong")
+        } else if (firstArg == "leave-room") {
+          if (page === "home-games-project-join") {
+            iframe.srcdoc = "";
+            chPage("home")
+          }
         } else if (firstArg == "deno-terminal-end") {
           if (page === "home-games-project-edit") {
             ///term.nextLine() //useless I think?
           } else if (page === "home-games-project-join") {
-            alert("Game crashed on server")
+            iframe.srcdoc = "";
             leaveProject()
+            alert("Game crashed on server")
           }
         } else if (firstArg == "deno-save-client-success") {
           document.getElementById("editor-save").disabled = false // enable button
@@ -1000,7 +1014,11 @@
         } else if (firstArg == 'set-uid') {
           uid = secondArg
           localStorage.setItem("METAVERSE_UID", uid)
+          document.getElementById("logged-in-as-container").style.display = "block"
           document.getElementById("logged-in-as").innerText = uid
+        } else if (firstArg == "set-uid-error") {
+          console.error(firstArg, secondArg)
+          if (secondArg.includes("taken")) alert("Username already taken")
         } else if (firstArg == 'set-password') {
           localStorage.setItem("METAVERSE_PASSWORD", secondArg)
         } else if (firstArg == 'globe') {
