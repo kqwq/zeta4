@@ -23,5 +23,7 @@ No verified email or 5000+ energy points required for the Khan Academy account.
 This will generate a config.json file with a new KAAS key and project ID. You can swap these values for another valid key/ID between restarts.
 
 
-## How data is routed
+## FAQ
+Q: Where are the server logs stored?<br>
+A: `server/storage/logs/*`
 
