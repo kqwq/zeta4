@@ -1,12 +1,10 @@
-
-
 import serverCommands from "../commands/server.js"
 import { RoomManager } from "./roomManager.js"
 import { FileManager } from "./fileManager.js"
 
 let peers = []
-let roomManager = new RoomManager()
 let fileManager = new FileManager()
+let roomManager = new RoomManager()
 
 /**
  * 
@@ -15,7 +13,7 @@ let fileManager = new FileManager()
  * @param {*} message 
  */
 function clientToDeno(room, recipient, message) {
-  room?.denoProcess.stdin.write("@" + recipient + " " + message + "\n");
+  room?.denoProcess.stdin.write(recipient + " " + message + "\n");
 }
 
 
@@ -63,7 +61,7 @@ class Peer {
     } catch (e) {
       console.log(`There was an error executing the command: ${commandName}`)
       console.log(e)
-      fileManager.logError(this.uid, e)
+      fileManager.log(this.uid, e)
     }
   }
 }

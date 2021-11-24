@@ -14,10 +14,10 @@ import fetch from "node-fetch";
  */
 
 function sendToDenoProcess(room, command, response) {
-  room.denoProcess.stdin.write("@server " + JSON.stringify({ command, response }) + "\n");
+  room.denoProcess.stdin.write("server " + JSON.stringify({ command, response }) + "\n");
 }
 function clientToDeno(room, recipient, message) {
-  room.denoProcess.stdin.write("@" + recipient + " " + message + "\n");
+  room.denoProcess.stdin.write(recipient + " " + message + "\n");
 }
 function sendToClient(recipientPeer, message) {
   recipientPeer.send(`^${message}`);
@@ -99,7 +99,7 @@ export default [
       //   sendToClient(peer, randomPlayer, message);
       // } 
       else {
-        let recipient = rm.getPlayerByUid(recipientUid);
+        let recipient = room.getPlayerByUid(recipientUid);
         if (recipient) {
           sendToClient(recipient, message);
         } else {
@@ -110,7 +110,7 @@ export default [
   },
   {
     name: 'fetch',
-    exec: (args, peer, rm) => {
+    exec: (args, room) => {
       let url = args
       for (let domain of whitelistedDomains) {
         // Check if the url is whitelisted
@@ -119,7 +119,7 @@ export default [
           fetch(url).then(res => {
             res.text().then(text => {
               // Send the text to the client
-              sendToDenoProcess(denoProcess, 'fetch', {
+              sendToDenoProcess(room, 'fetch', {
                 text: text,
                 url: url,
                 status: res.status,

@@ -3,7 +3,6 @@ FileManager gives you a way to log, read, and write files.
 
 If you want to use a database API (e.g. MongoDB) instead of the filesystem, change the following methods
   - log
-  - logError
   - read
   - getClient
   - getServer
@@ -38,8 +37,9 @@ function sanitize(str) {
 class FileManager {
   constructor() {
     this.storage = "./storage"
-    this.root = "./storage/deno"
-    this.logLengthLimit = 800;
+    this.deno = "./storage/deno"
+    this.logs = "./storage/logs"
+    this.logLengthLimit = 100;
     this.projectInfoCache = []
     this.defaultClient =
       this.starterClientHtmlCode = (projName) => `<!DOCTYPE html>
@@ -57,40 +57,72 @@ class FileManager {
 </html>`;
     this.defaultServer = (projName) => `console.log('Hello world!');`;
 
+    // Check if storage, deno, and logs directories exist
+    if (!fs.existsSync(this.storage)) {
+      fs.mkdirSync(this.storage);
+    }
+    if (!fs.existsSync(this.deno)) {
+      fs.mkdirSync(this.deno);
+    }
+    if (!fs.existsSync(this.logs)) {
+      fs.mkdirSync(this.logs);
+    }
+
+    // Add "program started" to log
+    this.log("", "")
+    this.log("", " ====================================== ")
+    this.log("", "             SERVER STARTED             ")
+    this.log("", " ====================================== ")
+
+
   }
 
+
+  /**
+   * 
+   * @returns HH:MM:SS
+   */
+  getTimestamp() {
+    let date = new Date()
+    let hours = date.getUTCHours().toString().padStart(2, '0')
+    let minutes = date.getUTCMinutes().toString().padStart(2, '0')
+    let seconds = date.getUTCSeconds().toString().padStart(2, '0')
+    return `${hours}:${minutes}:${seconds}`
+  }
+  
+  getDatestamp() {
+    let date = new Date()
+    let year = date.getUTCFullYear().toString().padStart(4, '0')
+    let month = (date.getUTCMonth() + 1).toString().padStart(2, '0')
+    let day = date.getUTCDate().toString().padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+    
   async log(uid, data) {
     // Append to log file
-    let filePath = path.join(this.storage, "log.txt");
-    await fs.promises.appendFile(filePath, `${uid}:${data}`.slice(0, this.logLengthLimit)+"\n");
+    let filePath = path.join(this.logs, this.getDatestamp()+".log")
+    await fs.promises.appendFile(filePath, `${this.getTimestamp()} ${uid} ${data}`.slice(0, this.logLengthLimit)+"\n");
   }
-
-  async logError(uid, error) {
-    // Append to log file
-    let filePath = path.join(this.storage, "log.txt");
-    await fs.promises.appendFile(filePath, `E:${uid}:${error}`.slice(0, this.logLengthLimit)+"\n");
-  }
-
 
   // Getters
   async getClient(projectName) {
-    let filePath = path.join(this.root, projectName, "client.html")
+    let filePath = path.join(this.deno, projectName, "client.html")
     let file = await fs.promises.readFile(filePath);
     return file
   }
   async getServer(projectName) {
-    let filePath = path.join(this.root, projectName, "server.js")
+    let filePath = path.join(this.deno, projectName, "server.js")
     let file = await fs.promises.readFile(filePath);
     return file
   }
   async getInfo(projectName) {
-    let filePath = path.join(this.root, projectName, "info.json")
+    let filePath = path.join(this.deno, projectName, "info.json")
     let file = await fs.promises.readFile(filePath);
     return JSON.parse(file)
   }
   async getAllInfo() {
     let projInfo = []
-    let projNames = await fs.promises.readdir(this.root)
+    let projNames = await fs.promises.readdir(this.deno)
     for (let projName of projNames) {
       let info = await this.getInfo(projName)
       projInfo.push(info)
@@ -103,7 +135,7 @@ class FileManager {
   async setClient(projectName, data, writerUid) {
     let canWrite = await this.canWrite(projectName, writerUid)
     if (canWrite) {
-      let filePath = path.join(this.root, projectName, "client.html")
+      let filePath = path.join(this.deno, projectName, "client.html")
       await fs.promises.writeFile(filePath, data)
     } else {
       throw new Error(`${writerUid} does not have permission to write to ${projectName}/client.html`)
@@ -112,7 +144,7 @@ class FileManager {
   async setServer(projectName, data, writerUid) {
     let canWrite = await this.canWrite(projectName, writerUid)
     if (canWrite) {
-      let filePath = path.join(this.root, projectName, "server.js")
+      let filePath = path.join(this.deno, projectName, "server.js")
       await fs.promises.writeFile(filePath, data)
     } else {
       throw new Error(`${writerUid} does not have permission to write to ${projectName}/server.js`)
@@ -126,7 +158,7 @@ class FileManager {
       canWrite = await this.canWrite(projectName, writerUid)
     }
     if (canWrite) {
-      let filePath = path.join(this.root, projectName, "info.json")
+      let filePath = path.join(this.deno, projectName, "info.json")
       await fs.promises.writeFile(filePath, JSON.stringify(data))
     } else {
       throw new Error(`${writerUid} does not have permission to write to ${projectName}/info.json`)
@@ -159,7 +191,7 @@ class FileManager {
 
     if (newInfo.basedOn) { // Copy from existing project (template)
       let basedOnProj = newInfo.basedOn
-      let templatePath = path.join(this.root, basedOnProj)
+      let templatePath = path.join(this.deno, basedOnProj)
       await fs.promises.copy(templatePath, denoProjectPath)
       let oldInfo = await this.getInfo(basedOnProj)
       let newInfo = {

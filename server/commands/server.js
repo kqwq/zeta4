@@ -1,11 +1,8 @@
 import { findFlagUrlByIso2Code } from 'country-flags-svg'
 import { getAllTimezones, getCountry, getTimezone } from 'countries-and-timezones';
 import dotenv from 'dotenv';
-import { spawn } from 'child_process';
 import { promises as fs } from "fs";
 import { timingSafeEqual } from 'crypto';
-import fetch from 'node-fetch';
-import denoCommands from './deno.js';
 
 dotenv.config();
 

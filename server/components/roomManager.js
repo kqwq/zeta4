@@ -1,4 +1,3 @@
-
 import denoCommands from "../commands/deno.js"
 import { spawn } from "child_process";
 
@@ -23,12 +22,14 @@ class Room {
   onDenoData(data) {
     var cmd, args, commandName;
     if (data.startsWith("!")) {
-      console.log(`d: ${data}`);
-      [commandName, args] = data.split(/ (.+)/s)
-      cmd = denoCommands.find(c => c.name == commandName.substring(1))
+      data = data.slice(1);
+      [ commandName, args ] = data.split(/ (.+)/s)
+      commandName = commandName.replace(/\n/g, '')
+      args = args || "";
+      cmd = denoCommands.find(x => x.name == commandName)
     } else {
       args = data
-      cmd = denoCommands.find(c => c.name == "*")
+      cmd = denoCommands.find(x => x.name == "*")
     }
     if (cmd) {
       try {
