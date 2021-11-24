@@ -233,8 +233,8 @@ class FileManager {
   async deleteProject(projectName, writerUid) {
     let canWrite = await this.canWrite(projectName, writerUid)
     if (canWrite) {
-      let denoProjectPath = `${denoPath}/${projectName}`
-      await fs.promises.rmdir(denoProjectPath)
+      let denoProjectPath = path.join(this.deno, projectName)
+      await fs.promises.rmdir(denoProjectPath, {recursive: true})
     } else {
       throw new Error(`${writerUid} does not have permission to delete ${projectName}`)
     }
