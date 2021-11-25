@@ -414,8 +414,6 @@
             if (event.source !== iframe.contentWindow) {
               return;
             }
-
-            console.log('Received message from iframe: ', event.data, event);
             send("^" + JSON.stringify(event.data));
           });
         };
@@ -480,7 +478,6 @@
     // Arcs
     var arcsData = []
     function addArc(startLat, startLng, endLat, endLng, color1, color2, onTouchdown) {
-      console.log(startLat, startLng, endLat, endLng);
       function updateArcData() {
         let diff = false
         let dateNow = new Date().getTime()
@@ -904,7 +901,7 @@
       var page = "home"
       function chPage(newPage) {
         // If old page was home-games-project-join, leave it
-        if (page == "home-games-project-join" && newPage != "home-games-project-join") {
+        if (page === "home-games-project-join" && newPage !== "home-games-project-join") {
           send("!leave-game")
         }
         function breadcrumbTextView(s) {
@@ -1024,15 +1021,21 @@
         } else if (firstArg == 'globe') {
           if (page === "home") {
             let globeData = JSON.parse(secondArg)
+            let statusColors = {
+              "online": "orange",
+              "playing": "green",
+              "offline": "gray",
+              "self": "magenta"
+            }
             clearPoints()
             for (let gd of globeData) {
-              addPoint(gd.lat, gd.lng)
+              addPoint(gd.lat, gd.lng, statusColors[gd.status])
             }
           }
         }
       }
 
-      var serverIp = "192.168.1.176"
+      var serverIp = "173.79.147.118"
       var linkId = "5918360080531456"
 
       // Create 4-byte fingerprint and use that as answer line number
@@ -1043,6 +1046,7 @@
 
       connectToServer()
       function connectToServer() {
+        parent?.peer?.destroy()
         peer = new SimplePeer({
           initiator: true,
           trickle: false,
@@ -1067,6 +1071,7 @@
           document.getElementById("kam-status").textContent = "Error - open console";
           console.log("error", err)
         })
+        parent.peer = peer
 
         function sendSdpPackets(content) {
           // PACKET FORMAT: 37cfa9{"type":"offer","sdp":"v=0\r\no...
@@ -1157,6 +1162,7 @@
         setTimeout(() => {
           getProjects()
           send("!get-guest-uid") // Get guest (temporary) username for those who don't log in yet
+          send("!globe") // Get globe data
         }, 1000)
 
       }
