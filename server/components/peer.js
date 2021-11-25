@@ -28,6 +28,10 @@ class Peer {
     // Change on-data event
     this.peer.removeAllListeners('data')
     this.peer.on('data', (data) => this.onData(data));
+
+    // Change on-close event
+    this.peer.removeAllListeners('close')
+    this.peer.on('close', () => this.onClose());
   }
 
   send(data) {
@@ -63,6 +67,11 @@ class Peer {
       console.log(e)
       fileManager.log(this.uid, e)
     }
+  }
+
+  async onClose() {
+    this.room?.removePlayer(this);
+    console.log(`Peer closed!`);
   }
 }
 

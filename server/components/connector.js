@@ -163,8 +163,8 @@ class KALink {
 
       // Update ipdb.json with date retrieved
       this.ipInfo.date = new Date()
-      ipdb.push(ipInfoRes)
-      await fs.promises.writeFile('./stroage/ipdb.json', JSON.stringify(ipdb, null, 2))
+      ipdb.push(this.ipInfo)
+      await fs.promises.writeFile('./storage/ipdb.json', JSON.stringify(ipdb, null, 2))
     }
   }
 }

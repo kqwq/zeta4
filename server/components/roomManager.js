@@ -116,7 +116,9 @@ class Room {
   }
 
   removePlayer(player) {
-    player.send("leave-room")
+    if (!player.peer.destroyed) {
+      player.send("leave-room")
+    }
     this.sendToTerminal(`\x1b[31m${player.uid} left the room\x1B[0m`)
     player.room = null;
     this.players.splice(this.players.indexOf(player), 1);
@@ -186,6 +188,7 @@ class RoomManager {
     }
     let room = new Room(this, projectName, isMaintenance, players, maxPlayers)
     room.startServer()
+    this.rooms.push(room)
     return room
   }
 

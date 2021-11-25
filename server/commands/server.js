@@ -125,7 +125,7 @@ export default [
     name: "join-game",
     exec: async(args, p, peers, gm, fm) => {
 
-      if (p.room === args) {
+      if (p.room.name === args) {
         return p.send("~\x1b[31mAlready in game\x1B[0m\n")
       }
 
@@ -188,17 +188,33 @@ export default [
   },
   {
     name: "globe",
-    exec: (args, p, peers) => {
-      let globeData = peers.map(peerData => {
-        let p = peerData.ipInfo;
+    exec: async (args, thisPeer, peers) => {
+      let res = await fs.readFile(`./storage/ipdb.json`, 'utf8')
+      let data = JSON.parse(res)
+      let globeData = data.filter(p => p.loc).map(p => {
+
         let [lat, lng] = p.loc.split(",").map(x => parseFloat(x))
+        // Check if p.ip is in peers
+        let status;
+        let peer = peers.find(peerData => peerData.ipInfo.ip === p.ip)
+        if (peer) {
+          if (peer === thisPeer) {
+            status = "self"
+          } else if (peer.room) {
+            status = "playing"
+          } else {
+            status = "online"
+          }
+        } else {
+          status = "offline"
+        }
         return {
           lat: lat,
           lng: lng,
-          uid: peerData.uid,
+          status: status,
         }
       })
-      p.send("globe " + JSON.stringify(globeData))
+      thisPeer.send("globe " + JSON.stringify(globeData))
     }
   },
   {
