@@ -901,7 +901,9 @@
       var page = "home"
       function chPage(newPage) {
         // If old page was home-games-project-join, leave it
+        console.log("old page: " + page, "new page: " + newPage)
         if (page === "home-games-project-join" && newPage !== "home-games-project-join") {
+          console.log("Leaving project join page")
           send("!leave-game")
         }
         function breadcrumbTextView(s) {
@@ -946,6 +948,7 @@
 
       var terminalActive = false
       function onRecieve(data) {
+        console.log("%c" + data, 'background: #000; color: #ff00ff')
         if (data.startsWith("~")) {
           // Send message to terminal if it is open
           if (page == "home-games-project-edit") {
@@ -963,7 +966,6 @@
           iframe?.contentWindow?.postMessage(data.slice(1), '*');
           return
         }
-        console.log("%c" + data, 'background: #000; color: #ff00ff')
         let [firstArg, secondArg] = data.split(/ (.+)/s)
         if (firstArg == "!ping") {
           send("!pong")

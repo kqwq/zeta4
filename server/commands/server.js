@@ -125,8 +125,9 @@ export default [
     name: "join-game",
     exec: async(args, p, peers, gm, fm) => {
 
-      if (p.room.name === args) {
-        return p.send("~\x1b[31mAlready in game\x1B[0m\n")
+      if (p.room?.name === args) {
+        p.send("~\x1b[31mAlready in game\x1B[0m\n")
+        return
       }
 
       gm.addPlayer(p, args)
@@ -142,7 +143,7 @@ export default [
       if (p.room === null) {
         return p.send("~\x1b[31mNot in game\x1B[0m\n")
       }
-      rm.removePlayer(p)
+      p.room.removePlayer(p)
       p.send("~\x1b[36mYou have left the game\x1B[0m\n")
     }
   },
