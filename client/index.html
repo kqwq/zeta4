@@ -37,6 +37,8 @@
 
     /* STYLE.HOME */
     #home-instructions-container {
+      background-color: rgba(0, 0, 0, 0.3);
+      z-index: 2;
       position: absolute;
       left: 10px;
       bottom: 10px;
@@ -78,7 +80,7 @@
       background-color: rgba(255, 255, 255, 0.4);
     }
 
-    .btn-container {
+    #btn-container {
       position: absolute;
       top: 0;
       right: 0;
@@ -257,7 +259,7 @@
       position: absolute;
       top: 40px;
       right: 30px;
-      width: 120px;
+      width: 123px;
       height: 50px;
       padding: 3px;
       border-radius: 2px;
@@ -328,17 +330,19 @@
   <div class="page" id="home">
     <div id="globeViz"></div>
 
-    <div class="btn-container">
+    <div id="btn-container">
       <button class="btn-glass" onclick="chPage('home-login')"
-        onhover="homePopulateInstructions('login')">Login</button>
+        onmouseenter="putInstructions('login')" onmouseleave="putInstructions()">Login</button>
       <button class="btn-glass" onclick="chPage('home-games')"
-        onhover="homePopulateInstructions('enter')">Enter</button>
-      <button class="btn-glass" onclick="createProject()" onhover="homePopulateInstructions('build')">Build</button>
+      onmouseenter="putInstructions('enter')" onmouseleave="putInstructions()">Enter</button>
+      <button class="btn-glass" onclick="createProject()" onmouseenter="putInstructions('build')" onmouseleave="putInstructions()">Build</button>
     </div>
 
     <div id="home-instructions-container">
       <span id="home-instructions"></span>
       <span id="logged-in-as-container" style="display:none">Logged in as <span id="logged-in-as"></span> <a href="javascript:void(0)" onclick="chName()">edit name</a></span>
+      <span id="white-screen">White screen? <a href="javascript:void(0)" onclick="hideGraphics()">hide graphics</a> - <a href="javascript:void(0)" onclick="hideGraphics(false)">dismiss</a></span>
+      <span id="not-connected" style="display:none">You are disconnected <a href="javascript:void(0)" onclick="connectToServer()">reconnect</a></span>
     </div>
   </div>
 
@@ -379,14 +383,15 @@
   </div>
 
   <div class="container page mt-5" id="home-games-project">
-    <h4 id="kam-proj-title" contenteditable="true">Project</h4>
+    <h4 id="kam-proj-title">Project</h4>
     <p id="kam-proj-desc" contenteditable="true">desc</p><br>
     Version: <p id="kam-proj-version" contenteditable="true">v</p><br>
     Author: <b id="kam-proj-author">a</b>
-    <button class="btn btn-success" onclick="saveProjectChanges()">Save Changes</button>
-    <button class="btn btn-success" onclick="joinProject()">Join / test</button>
-    <button class="btn btn-dark" onclick="editProject()">Edit code</button>
-    <button class="btn btn-danger" onclick="deleteProject()">Delete</button>
+    <button class="btn btn-success" onclick="joinProject()" id="kam-proj-join">Join</button>
+    <hr/>
+    <button class="btn btn-success" onclick="saveProjectChanges()" id="kam-proj-save">Save Changes</button>
+    <button class="btn btn-dark" onclick="editProject()" id="kam-proj-edit">Edit</button>
+    <button class="btn btn-danger" onclick="deleteProject()" id="kam-proj-delete">Delete</button>
   </div>
 
   <div class="container page" id="home-games-project-loading">
@@ -427,7 +432,7 @@
       <button class="btn btn-sm btn-info" id="editor-save" onclick="saveClientCode()">Save</button>
       <button class="btn btn-sm btn-success" id="editor-run" onclick="runServerCode()">Run</button>
       <button class="btn btn-sm btn-danger" id="editor-stop" onclick="stopServerCode()">Stop</button>
-      <span id="editor-status">Finished</span>
+      <span id="editor-status">status</span>
     </div>
   </div>
 
@@ -543,13 +548,19 @@
 
     addPoint(myGeo.lat, myGeo.lng, '#00ff00')
 
-    function homePopulateInstructions(buttonName) {
+    function putInstructions(buttonName) {
       let instructions = {
+        undefined: '',
         login: "Login in with your Khan Academy account",
-        enter: "Choose from a selection of multiplayer-compatible projects",
-        build: "Create a new metaverse project or begin with a template - guests cannot create projects",
+        enter: "Enter into the metaverse and join a multiplayer-enabled project",
+        build: "Build a new metaverse project or use a template (must be logged in)",
       }
       document.getElementById('home-instructions').innerHTML = instructions[buttonName]
+    }
+
+    function hideGraphics(chColor) {
+      if (chColor) document.getElementById('btn-container').style['background-color']='#0a082e'
+      document.getElementById('white-screen').style.display = 'none'
     }
 
   </script>
@@ -703,6 +714,9 @@
   <script type>{
       { }// highlighting fixed in vscode
 
+      // SCRIPT.PROJECT
+      var editorStatusCountup = -1;
+
       // Views setup
       var view = 'server'
       function chView(newView) {
@@ -734,6 +748,11 @@
       }
       function populateProjects() {
         let denoListHtml = ""
+        // Sort by view count
+        let getScore = (proj) => proj.views + (proj.author == uid) * 100000
+        projects.sort((a, b) => {
+          return getScore(b) - getScore(a)
+        })
         for (let p of projects) {
           denoListHtml += `
 <div class="game-item">
@@ -765,8 +784,25 @@
         document.getElementById('kam-proj-desc').textContent = myProject.desc;
         document.getElementById('kam-proj-version').textContent = myProject.version;
         document.getElementById('kam-proj-author').textContent = myProject.author;
-        chPage('home-games-project');
 
+        // Disable buttons and stdout view if you're not the author
+        let disableBtns = myProject.author !== uid;
+        document.getElementById('kam-proj-save').disabled = disableBtns;
+        document.getElementById('kam-proj-edit').disabled = disableBtns;
+        document.getElementById('kam-proj-delete').disabled = disableBtns;
+        document.getElementById('editor-save').disabled = disableBtns;
+        document.getElementById('editor-run').disabled = disableBtns;
+        document.getElementById('editor-stop').disabled = disableBtns;
+        document.getElementById('stdout').style['pointer-events'] = disableBtns ? 'none' : 'auto';
+
+        // Disable editors
+        editorHtml.setReadOnly(disableBtns);
+        editorServer.setReadOnly(disableBtns);
+
+        // Editor options text
+        document.getElementById('editor-status').textContent = disableBtns ? 'No edit access' : 'Not running';
+        
+        chPage('home-games-project');
       }
       function joinProject(projName) {
         myProject = projName ? projects.find(p => p.name == projName) : myProject;
@@ -784,19 +820,14 @@
           return str.replace(/\W/g, '-').replace(/[^a-z0-9-]/gi, '');
         }
         myProject = {
-          prevName: myProject.name,
-          name: alphanumericOrDashFilter(document.getElementById('kam-proj-title').textContent), // Sanitize name
+          name: myProject.name,
           desc: document.getElementById('kam-proj-desc').textContent.slice(0, 1024), // Shorten
           version: document.getElementById('kam-proj-version').textContent.slice(0, 20),
           author: uid,
           lastUpdated: Date.now()
         }
         aboutProject();
-        if (projects.find(p => p.name == myProject.name)) {
-          alert("Project name already exists")
-        } else {
-          send("!deno-update-info " + JSON.stringify(myProject))
-        }
+        send("!deno-update-info " + JSON.stringify(myProject))
       }
       function editProject(projName) {
         myProject = projName ? projects.find(p => p.name == projName) : myProject;
@@ -821,12 +852,14 @@
 
       function runServerCode() {
         chView('stdout');
+        editorStatusCountup = 0;
         let serverCode = editorServer.getSession().getValue();
         let obj = {
           project: myProject.name,
           code: serverCode
         }
         send("!deno-save-and-run-server " + JSON.stringify(obj));
+        document.getElementById('editor-status') = "Starting..."
       }
       function stopServerCode() {
         send("!deno-kill")
@@ -929,6 +962,7 @@
         } else {
           document.getElementById("kam-views").style.display = "none";
           terminalActive = false;
+          editorStatusCountup = -1;
           document.getElementById("view-stdout").style.display = "none";
 
         }
@@ -976,7 +1010,9 @@
           }
         } else if (firstArg == "deno-terminal-end") {
           if (page === "home-games-project-edit") {
-            ///term.nextLine() //useless I think?
+            editorStatusCountup = -1;
+            let statusCode = secondArg
+            document.getElementById("editor-status").textContent = statusCode ? "Error" : "Success" 
           } else if (page === "home-games-project-join") {
             iframe.srcdoc = "";
             leaveProject()
@@ -1048,6 +1084,8 @@
 
       connectToServer()
       function connectToServer() {
+
+
         parent?.peer?.destroy()
         peer = new SimplePeer({
           initiator: true,
@@ -1058,6 +1096,8 @@
         }).on("signal", function (data) {
           console.log("%cCopy for manual input", "background: #000; font-size: x-large")
           console.log("%c" + "SDP_" + randomFingerprint + "_" + btoa(data.sdp), 'background: #000; color: #00ff00')
+        document.getElementById("not-connected").style.display = "none"
+        document.getElementById("kam-status").innerHTML = 'Connecting<span class="loading"></span>'
           sendSdpPackets(JSON.stringify(data))
         }).on("connect", function () {
           isConnected = true
@@ -1068,7 +1108,7 @@
         }).on("close", function () {
           isConnected = false
           document.getElementById("kam-status").textContent = "Disconnected"
-          console.log("close")
+          document.getElementById("not-connected").style.display = "block"
         }).on("error", function (err) {
           document.getElementById("kam-status").textContent = "Error - open console";
           console.log("error", err)
@@ -1177,7 +1217,16 @@
             ele.innerHTML = ""
           }
         })
-      }, 500)
+        if (terminalActive && editorStatusCountup >= 0) {
+          editorStatusCountup += 0.25
+          let hours = Math.floor(editorStatusCountup / 3600)
+          let minutes = Math.floor((editorStatusCountup - hours * 3600) / 60)
+          let seconds = (editorStatusCountup - hours * 3600 - minutes * 60).toFixed(1)
+          document.getElementById("editor-status").textContent = `${hours}h ${minutes}m ${seconds}s`
+        }
+      }, 250)
+
+      
 
 
     }

@@ -37,6 +37,18 @@ export default [
     }
   },
   {
+    name: "is-eu",
+    exec: (args, p) => {
+      let euCountries = ['AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE']
+      let country = p.ipInfo.country
+      if (euCountries.includes(country)) {
+        p.send("is-eu true")
+      } else {
+        p.send("is-eu false")
+      }
+    }
+  },
+  {
     name: "deno-get-projects",
     exec: async (args, p, peers, rm, fm) => {
       let allInfo = await fm.getAllInfo()
@@ -57,7 +69,7 @@ export default [
   {
     name: "deno-update-info",
     exec: async (args, p, peers, rm, fm) => {
-      let newInfo = JSON.parse(args)
+      let newInfo = JSON.parse(args) 
       await fm.setInfo(newInfo.name, newInfo, p.uid)
     }
   },

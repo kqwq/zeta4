@@ -172,7 +172,7 @@ class FileManager {
     if (!projInfo) {
       projInfo = await this.getInfo(projectName)
     }
-    return projInfo.owner === writerUid || !projInfo.owner // If no owner, anyone can write
+    return projInfo.author === writerUid || !projInfo.author // If no author, anyone can write
   }
 
   // Misc
@@ -197,7 +197,7 @@ class FileManager {
       let newInfo = {
         ...oldInfo,
         name: sanitizedProjectName,
-        owner: writerUid,
+        author: writerUid,
         isTemplate: false,
         basedOn: basedOnProj,
         created: new Date().toISOString(),
@@ -210,7 +210,7 @@ class FileManager {
         name: sanitizedProjectName,
         desc: trimTo(newInfo.desc, 1000) || "Blank description",
         version: trimTo(newInfo.version, 60) || "1.0.0",
-        owner: writerUid,
+        author: writerUid,
         isTemplate: newInfo.isTemplate || false,
         basedOn: null,
         created: new Date().toISOString(),

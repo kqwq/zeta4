@@ -88,8 +88,10 @@ class Room {
     child.on('close', function (code) {
       if (that.isMaintenance) {
         let firstPlayer = that.players[0]
-        firstPlayer.send(`~Process finished with exit code ${code}\n`)
-        firstPlayer.send('deno-terminal-end')
+        if (firstPlayer) {
+          firstPlayer.send(`~Process finished with exit code ${code}\n`)
+          firstPlayer.send(`deno-terminal-end ${code}`)
+        }
       }
       that.removeAllPlayers()
     });
