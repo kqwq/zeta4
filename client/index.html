@@ -331,18 +331,22 @@
     <div id="globeViz"></div>
 
     <div id="btn-container">
-      <button class="btn-glass" onclick="chPage('home-login')"
-        onmouseenter="putInstructions('login')" onmouseleave="putInstructions()">Login</button>
-      <button class="btn-glass" onclick="chPage('home-games')"
-      onmouseenter="putInstructions('enter')" onmouseleave="putInstructions()">Enter</button>
-      <button class="btn-glass" onclick="createProject()" onmouseenter="putInstructions('build')" onmouseleave="putInstructions()">Build</button>
+      <button class="btn-glass" onclick="chPage('home-login')" onmouseenter="putInstructions('login')"
+        onmouseleave="putInstructions()" id="btn-login">Login</button>
+      <button class="btn-glass" onclick="chPage('home-games')" onmouseenter="putInstructions('enter')"
+        onmouseleave="putInstructions()">Enter</button>
+      <button class="btn-glass" onclick="createProject()" onmouseenter="putInstructions('build')"
+        onmouseleave="putInstructions()">Build</button>
     </div>
 
     <div id="home-instructions-container">
       <span id="home-instructions"></span>
-      <span id="logged-in-as-container" style="display:none">Logged in as <span id="logged-in-as"></span> <a href="javascript:void(0)" onclick="chName()">edit name</a></span>
-      <span id="white-screen">White screen? <a href="javascript:void(0)" onclick="hideGraphics()">hide graphics</a> - <a href="javascript:void(0)" onclick="hideGraphics(false)">dismiss</a></span>
-      <span id="not-connected" style="display:none">You are disconnected <a href="javascript:void(0)" onclick="connectToServer()">reconnect</a></span>
+      <span id="logged-in-as-container" style="display:none">Logged in as <span id="logged-in-as"></span> <a
+          href="javascript:void(0)" onclick="chName()" id="edit-name">edit name</a></span>
+      <span id="white-screen">White screen? <a href="javascript:void(0)" onclick="hideGraphics(true)">hide graphics</a> - <a
+          href="javascript:void(0)" onclick="hideGraphics(false)">dismiss</a></span>
+      <span id="not-connected" style="display:none">You are disconnected <a href="javascript:void(0)"
+          onclick="connectToServer()">reconnect</a></span>
     </div>
   </div>
 
@@ -384,13 +388,14 @@
 
   <div class="container page mt-5" id="home-games-project">
     <h4 id="kam-proj-title">Project</h4>
-    <p id="kam-proj-desc" contenteditable="true">desc</p><br>
-    Version: <p id="kam-proj-version" contenteditable="true">v</p><br>
+    <p id="kam-proj-desc" contenteditable="true">desc</p>
+    Version: <p id="kam-proj-version" contenteditable="true">v</p>
     Author: <b id="kam-proj-author">a</b>
+    <br><br>
     <button class="btn btn-success" onclick="joinProject()" id="kam-proj-join">Join</button>
-    <hr/>
-    <button class="btn btn-success" onclick="saveProjectChanges()" id="kam-proj-save">Save Changes</button>
     <button class="btn btn-dark" onclick="editProject()" id="kam-proj-edit">Edit</button>
+    <hr />
+    <button class="btn btn-success" onclick="updateProjectInfo()" id="kam-proj-save">Update info</button>
     <button class="btn btn-danger" onclick="deleteProject()" id="kam-proj-delete">Delete</button>
   </div>
 
@@ -559,7 +564,7 @@
     }
 
     function hideGraphics(chColor) {
-      if (chColor) document.getElementById('btn-container').style['background-color']='#0a082e'
+      if (chColor) document.getElementById('btn-container').style['background-color'] = '#0a082e'
       document.getElementById('white-screen').style.display = 'none'
     }
 
@@ -568,7 +573,7 @@
   <!-- SCRIPT.LOGIN -->
   <script type>
     var uid = ""
-    var bioChangePIN = "#" + Math.random().toString(36).slice(6, 10).toUpperCase();
+    var bioChangePIN = "error";
     var ppAnimation = 1;
     var ppAnimationTarget = 1;
     var ppShown = true;
@@ -581,24 +586,17 @@
     function ppHide() { // Hide pp card and show large username input
       ppAnimationTarget = 1
     }
+    function getPPUValue() {
+      // Remove non-alphanumeric/underscore characters
+      ppu.value = ppu.value.replace(/[^a-zA-Z0-9_]/g, "");
+      return ppu.value
+    }
     var usernameBlocking = false;
     var fetchingUsername = ""
     function fetchUsername() { // Show pp card if username input is focused
-      function getPPUValue() {
-        // Remove non-alphanumeric/underscore characters
-        ppu.value = ppu.value.replace(/[^a-zA-Z0-9_]/g, "");
-        return ppu.value
-      }
-      if (usernameBlocking) {
-        if (fetchingUsername !== getPPUValue()) { // If user quickly typed a new username and it was blocked, fetch it later
-          fetchingUsername = getPPUValue()
-          setTimeout(() => {
-            if (fetchingUsername === getPPUValue()) { // After a second, if the username is still different, fetch it
-              fetchUsername()
-            }
-          }, 1000)
-        }
-        return;
+
+      if (usernameBlocking || fetchingUsername == getPPUValue()) {
+        return
       }
       fetchingUsername = getPPUValue();
       if (fetchingUsername.length < 3) {
@@ -606,28 +604,8 @@
         return;
       }
       usernameBlocking = true;
-      try {
-        let profileParameter = fetchingUsername.slice(0, 5) == "kaid_" ? "kaid" : "username";
-        parent.$.getJSON(`https://www.khanacademy.org/api/internal/user/profile?${profileParameter}=${fetchingUsername}&projection={%22nickname%22:1,%22kaid%22:1,%22avatarSrc%22:1,%22points%22:1,%22bio%22:1}&callback=?`,
-          json => {
-            if (json == null) {
-              ppHide();
-              throw "Username does not exist"
-            }
-            document.getElementById("pp-real-name").textContent = json.nickname;
-            document.getElementById("pp-avatar").src = json.avatarSrc;
-            document.getElementById("pp-bio").textContent = json.bio;
-            document.getElementById("pp-ep").textContent = json.points ? "?" : "+" + json.points.toLocaleString()
-            document.getElementById("login-as-username").textContent = fetchingUsername
-            ppShow()
-          }
-        )
-      } catch (e) {
-        console.log(e)
-        ppHide()
-      } finally {
-        usernameBlocking = false;
-      }
+
+      send("!get-ka-profile " + fetchingUsername)
     }
     function logInAs() {
       document.getElementById("btn-login-as").disabled = true;
@@ -639,16 +617,8 @@
       document.getElementById("pp-bio").innerHTML = txt
     }
     function verifyBioChange() {
-      let profileParameter = fetchingUsername.slice(0, 5) == "kaid_" ? "kaid" : "username";
-      parent.$.getJSON(`https://www.khanacademy.org/api/internal/user/profile?${profileParameter}=${fetchingUsername}&projection={%22bio%22:1}&callback=?`,
-        d => {
-          if (d.bio.includes(bioChangePIN)) {
-            alert("Success! You can now log in as " + fetchingUsername + " automatically.")
-            chPage("home")
-          } else {
-            alert(`Your bio does not contain the PIN ${bioChangePIN}`)
-          }
-        })
+      document.getElementById("btn-verify").disabled = true;
+      send(`!sign-up-with-bio-pin ${localStorage.getItem("ka.metaverse:offerHash")}`)
     }
 
     function ppKeyframe(p) { // p = percentage of animation
@@ -684,7 +654,7 @@
     ppHide()
     ppKeyframe(1)
     setInterval(() => {
-      if (page == "login") {///
+      if (page === "home-login") {///
         if (ppAnimation == ppAnimationTarget) {
           return
         } else if (Math.abs(ppAnimation - ppAnimationTarget) < 0.001) {
@@ -703,10 +673,11 @@
         return
       }
       name = name.trim()
-      
       console.log(name, "hello");
-      send("!change-guest-uid " +  name)
-
+      send("!change-guest-uid " + name)
+      // Show login button
+      document.getElementById("btn-login").style.display = "block";
+      document.getElementById("edit-name").innerHTML = "edit name"
     }
 
   </script>
@@ -788,7 +759,7 @@
         // Disable buttons and stdout view if you're not the author
         let disableBtns = myProject.author !== uid;
         document.getElementById('kam-proj-save').disabled = disableBtns;
-        document.getElementById('kam-proj-edit').disabled = disableBtns;
+        document.getElementById('kam-proj-edit').innerHTML = disableBtns ? 'Edit (view only)' : 'Edit';
         document.getElementById('kam-proj-delete').disabled = disableBtns;
         document.getElementById('editor-save').disabled = disableBtns;
         document.getElementById('editor-run').disabled = disableBtns;
@@ -801,7 +772,7 @@
 
         // Editor options text
         document.getElementById('editor-status').textContent = disableBtns ? 'No edit access' : 'Not running';
-        
+
         chPage('home-games-project');
       }
       function joinProject(projName) {
@@ -815,7 +786,7 @@
         send("!leave-game")
         chPage('home-games-project')
       }
-      function saveProjectChanges() {
+      function updateProjectInfo() {
         function alphanumericOrDashFilter(str) {
           return str.replace(/\W/g, '-').replace(/[^a-z0-9-]/gi, '');
         }
@@ -955,6 +926,7 @@
         // Special rules
         if (page === "home") {
           if (isConnected) send("!globe")
+          document.getElementById("view-stdout").style.display = "none";
         } else if (page == "home-games-project-edit") {
           document.getElementById("kam-views").style.display = "inline";
           chView("html");
@@ -964,7 +936,7 @@
           terminalActive = false;
           editorStatusCountup = -1;
           document.getElementById("view-stdout").style.display = "none";
-
+          document.getElementById("btn-verify").disabled = false;
         }
 
       }
@@ -985,7 +957,7 @@
         console.log("%c" + data, 'background: #000; color: #ff00ff')
         if (data.startsWith("~")) {
           // Send message to terminal if it is open
-          if (page == "home-games-project-edit") {
+          if (page === "home-games-project-edit") {
             term.write((data.slice(1)).replace(/\x07/g, "\x1b[31m[DEBUG]\x1b[0m ").replace(/\n/g, "\r\n"))
           }
           return
@@ -1001,9 +973,9 @@
           return
         }
         let [firstArg, secondArg] = data.split(/ (.+)/s)
-        if (firstArg == "!ping") {
+        if (firstArg === "!ping") {
           send("!pong")
-        } else if (firstArg == "leave-room") {
+        } else if (firstArg === "leave-room") {
           if (page === "home-games-project-join") {
             iframe.srcdoc = "";
             chPage("home")
@@ -1012,29 +984,29 @@
           if (page === "home-games-project-edit") {
             editorStatusCountup = -1;
             let statusCode = secondArg
-            document.getElementById("editor-status").textContent = statusCode ? "Error" : "Success" 
+            document.getElementById("editor-status").textContent = statusCode ? "Error" : "Success"
           } else if (page === "home-games-project-join") {
             iframe.srcdoc = "";
             leaveProject()
             alert("Game crashed on server")
           }
-        } else if (firstArg == "deno-save-client-success") {
+        } else if (firstArg === "deno-save-client-success") {
           document.getElementById("editor-save").disabled = false // enable button
         } else if (firstArg == "geo") {
           let geoData = JSON.parse(data.slice(4))
-          myGeo = geoData
-        } else if (firstArg == 'deno-set-projects') {
+          /// TODO not used
+        } else if (firstArg === 'deno-set-projects') {
           projects = JSON.parse(secondArg)
           populateProjects()
-        } else if (firstArg == 'deno-set-server') {
+        } else if (firstArg === 'deno-set-server') {
           projectServerCode = secondArg
           editorServer.getSession().setValue(projectServerCode)
-        } else if (firstArg == 'deno-set-client') {
+        } else if (firstArg === 'deno-set-client') {
           projectClientCode = secondArg
           editorHtml.getSession().setValue(projectClientCode)
-        } else if (firstArg == 'set-iframe') {
+        } else if (firstArg === 'set-iframe') {
           iframe.srcdoc = secondArg
-        } else if (firstArg == 'deno-add-project') {
+        } else if (firstArg === 'deno-add-project') {
           myProject = JSON.parse(secondArg)
           if (myProject.prevName) {
             projects = projects.filter(p => p.name != myProject.prevName)
@@ -1042,21 +1014,22 @@
           projects.push(myProject)
           populateProjects()
           aboutProject()
-        } else if (firstArg == 'deno-remove-project') {
+        } else if (firstArg === 'deno-remove-project') {
           removedProjectName = secondArg
           projects = projects.filter(p => p.name != removedProjectName)
           populateProjects()
-        } else if (firstArg == 'set-uid') {
+        } else if (firstArg === 'set-uid') {
           uid = secondArg
-          localStorage.setItem("METAVERSE_UID", uid)
+          localStorage.setItem("ka.metaverse:uid", uid)
           document.getElementById("logged-in-as-container").style.display = "block"
           document.getElementById("logged-in-as").innerText = uid
-        } else if (firstArg == "set-uid-error") {
+          document.getElementById("kam-status").textContent = "✓"
+        } else if (firstArg === "set-uid-error") {
           console.error(firstArg, secondArg)
           if (secondArg.includes("taken")) alert("Username already taken")
-        } else if (firstArg == 'set-password') {
-          localStorage.setItem("METAVERSE_PASSWORD", secondArg)
-        } else if (firstArg == 'globe') {
+        } else if (firstArg === 'set-password') {
+          localStorage.setItem("ka.metaverse:password", secondArg)
+        } else if (firstArg === 'globe') {
           if (page === "home") {
             let globeData = JSON.parse(secondArg)
             let statusColors = {
@@ -1068,10 +1041,51 @@
             clearPoints()
             for (let gd of globeData) {
               addPoint(gd.lat, gd.lng, statusColors[gd.status])
+              if (gd.status === "self") {
+                myGeo = { lat: gd.lat, lng: gd.lng }
+              }
             }
+          }
+        } else if (firstArg === "get-ka-profile") {
+          usernameBlocking = false;
+          if (secondArg === "error") {
+            ppHide()
+          } else {
+            let json = JSON.parse(secondArg)
+            document.getElementById("pp-real-name").textContent = json.nickname;
+            document.getElementById("pp-avatar").src = json.avatarSrc;
+            document.getElementById("pp-bio").textContent = json.bio;
+            document.getElementById("pp-ep").textContent = json.points ? "?" : "+" + json.points.toLocaleString()
+            document.getElementById("login-as-username").textContent = fetchingUsername
+            bioChangePIN = json.pin
+            ppShow()
+          }
+          fetchUsername()
+        } else if (firstArg === "sign-up-with-bio-pin") {
+          document.getElementById("btn-verify").disabled = false;
+          if (secondArg === "success") {
+            alert("Success! You can now log in as " + fetchingUsername + " automatically.")
+            // Remove login button on home page
+            document.getElementById("btn-login").style.display = "none"
+      document.getElementById("edit-name").innerHTML = "log out"
+            chPage("home")
+          } else if (secondArg === "error") {
+            alert(`Your bio does not contain the PIN ${bioChangePIN}`)
+          } else if (secondArg === "already") {
+            alert(`You are already logged in to ${fetchingUsername}`)
+          }
+        } else if (firstArg === "auto-login") {
+          if (secondArg === "error") {
+            document.getElementById("kam-status").textContent = "Auto-login failed"
+            send(`!get-guest-uid`)
+          } else if (secondArg === "success") {
+            // Remove login button on home page
+            document.getElementById("btn-login").style.display = "none"
+      document.getElementById("edit-name").innerHTML = "log out"
           }
         }
       }
+      
 
       var serverIp = "173.79.147.118"
       var linkId = "5918360080531456"
@@ -1096,8 +1110,8 @@
         }).on("signal", function (data) {
           console.log("%cCopy for manual input", "background: #000; font-size: x-large")
           console.log("%c" + "SDP_" + randomFingerprint + "_" + btoa(data.sdp), 'background: #000; color: #00ff00')
-        document.getElementById("not-connected").style.display = "none"
-        document.getElementById("kam-status").innerHTML = 'Connecting<span class="loading"></span>'
+          document.getElementById("not-connected").style.display = "none"
+          document.getElementById("kam-status").innerHTML = 'Connecting<span class="loading"></span>'
           sendSdpPackets(JSON.stringify(data))
         }).on("connect", function () {
           isConnected = true
@@ -1200,12 +1214,23 @@
       }
 
       function onServerConnected() {
-        // Wait 1 second to make sure the server has time to connect
+        // Wait 0.5 seconds to make sure the server has time to connect
         setTimeout(() => {
           getProjects()
-          send("!get-guest-uid") // Get guest (temporary) username for those who don't log in yet
           send("!globe") // Get globe data
-        }, 1000)
+
+          // Auto-login or create guest account
+          uid = localStorage.getItem("ka.metaverse:uid")
+          let password = localStorage.getItem("ka.metaverse:password")
+          let oh = localStorage.getItem("ka.metaverse:offerHash")
+          localStorage.setItem("ka.metaverse:offerHash", oh || Math.random().toString())
+          if (uid && password && !uid.includes("-")) { // If uid has dash, it's a default guest/custom guest account
+            document.getElementById("kam-status").innerHTML = 'Logging in<span class="loading"></span>'
+            send(`!auto-login ${uid} ${password} ${oh}`) // Login to the server
+          } else {
+            send(`!get-guest-uid ${oh}`) // Get guest (temporary) username for those who don't log in yet
+          }
+        }, 500)
 
       }
 
@@ -1226,7 +1251,7 @@
         }
       }, 250)
 
-      
+
 
 
     }

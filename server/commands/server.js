@@ -3,11 +3,20 @@ import { getAllTimezones, getCountry, getTimezone } from 'countries-and-timezone
 import dotenv from 'dotenv';
 import { promises as fs } from "fs";
 import { timingSafeEqual } from 'crypto';
+import fetch from 'node-fetch';
 
 dotenv.config();
 
 function sanitize(str) {
   return str.replace(/[^a-zA-Z0-9_\-]/g, '')
+}
+
+function generateSignupPin() {
+  return "#" + Math.random().toString(36).substring(2, 6).toUpperCase()
+}
+function generatePassword() {
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  return Array(8).fill().map(() => chars[Math.floor(Math.random() * chars.length)]).join('')
 }
 
 let denoPath = "./storage/deno";
@@ -69,7 +78,7 @@ export default [
   {
     name: "deno-update-info",
     exec: async (args, p, peers, rm, fm) => {
-      let newInfo = JSON.parse(args) 
+      let newInfo = JSON.parse(args)
       await fm.setInfo(newInfo.name, newInfo, p.uid)
     }
   },
@@ -96,7 +105,7 @@ export default [
       p.send("deno-set-client " + clientCode)
     }
   },
-  { 
+  {
     name: "deno-save-client",
     exec: async (args, p, peers, rm, fm) => {
       let argData = JSON.parse(args)
@@ -112,15 +121,7 @@ export default [
       await fm.setServer(argData.project, argData.code, p.uid)
       p.send("~\x1b[31mStarting deno process...\x1B[0m\n")
       rm.createRoom(argData.project, true, [p])
-
-
-      ///p.send("~\x1b[31mRestarting deno process...\x1B[0m\n")
-
-
-
     }
-
-
   },
   {
     name: "deno-kill",
@@ -135,7 +136,7 @@ export default [
   },
   {
     name: "join-game",
-    exec: async(args, p, peers, gm, fm) => {
+    exec: async (args, p, peers, gm, fm) => {
 
       if (p.room?.name === args) {
         p.send("~\x1b[31mAlready in game\x1B[0m\n")
@@ -206,7 +207,7 @@ export default [
       let data = JSON.parse(res)
       let globeData = data.filter(p => p.loc).map(p => {
 
-        let [lat, lng] = p.loc.split(",").map(x => parseFloat(x))
+        let [lat, lng] = p.loc.split(",").map(x => Math.round(parseFloat(x)))
         // Check if p.ip is in peers
         let status;
         let peer = peers.find(peerData => peerData.ipInfo.ip === p.ip)
@@ -299,26 +300,107 @@ export default [
     }
   },
   {
-    name: "sign-up",
-    exec: (args, p) => {
-      let username = args.split(" ")[0];
-      let password = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      let accountData = {
-        account: account,
-        password: password
+    name: "get-ka-profile",
+    exec: async(args, p) => {
+      let isKaid = args.startsWith("kaid_")
+      let innerVariables = isKaid ? `\"kaid\":\"${args}\"` : `\"username\":\"${args}\"`
+      let res = await fetch("https://www.khanacademy.org/api/internal/graphql/getFullUserProfile", {
+        "headers": {
+          "content-type": "application/json",
+        },
+        "referrerPolicy": "strict-origin-when-cross-origin",
+        "body": `{\"operationName\":\"getFullUserProfile\",\"variables\":{${innerVariables}},\"query\":\"query getFullUserProfile($kaid: String, $username: String) {\\n  user(kaid: $kaid, username: $username) {\\n    id\\n    kaid\\n    key\\n    userId\\n    email\\n    username\\n    profileRoot\\n    gaUserId\\n    qualarooId\\n    isPhantom\\n    isDeveloper: hasPermission(name: \\\"can_do_what_only_admins_can_do\\\")\\n    isCurator: hasPermission(name: \\\"can_curate_tags\\\", scope: ANY_ON_CURRENT_LOCALE)\\n    isCreator: hasPermission(name: \\\"has_creator_role\\\", scope: ANY_ON_CURRENT_LOCALE)\\n    isPublisher: hasPermission(name: \\\"can_publish\\\", scope: ANY_ON_CURRENT_LOCALE)\\n    isModerator: hasPermission(name: \\\"can_moderate_users\\\", scope: GLOBAL)\\n    isParent\\n    isSatStudent\\n    isTeacher\\n    isDataCollectible\\n    isChild\\n    isOrphan\\n    isCoachingLoggedInUser\\n    canModifyCoaches\\n    nickname\\n    hideVisual\\n    joined\\n    points\\n    countVideosCompleted\\n    bio\\n    soundOn\\n    muteVideos\\n    showCaptions\\n    prefersReducedMotion\\n    noColorInVideos\\n    autocontinueOn\\n    newNotificationCount\\n    canHellban: hasPermission(name: \\\"can_ban_users\\\", scope: GLOBAL)\\n    canMessageUsers: hasPermission(name: \\\"can_send_moderator_messages\\\", scope: GLOBAL)\\n    isSelf: isActor\\n    hasStudents: hasCoachees\\n    hasClasses\\n    hasChildren\\n    hasCoach\\n    badgeCounts\\n    homepageUrl\\n    isMidsignupPhantom\\n    includesDistrictOwnedData\\n    preferredKaLocale {\\n      id\\n      kaLocale\\n      status\\n      __typename\\n    }\\n    underAgeGate {\\n      parentEmail\\n      daysUntilCutoff\\n      approvalGivenAt\\n      __typename\\n    }\\n    authEmails\\n    signupDataIfUnverified {\\n      email\\n      emailBounced\\n      __typename\\n    }\\n    pendingEmailVerifications {\\n      email\\n      unverifiedAuthEmailToken\\n      __typename\\n    }\\n    tosAccepted\\n    shouldShowAgeCheck\\n    __typename\\n  }\\n  actorIsImpersonatingUser\\n}\\n\"}`,
+        "method": "POST",
+        "mode": "cors",
+        "credentials": "include"
+      })
+      let json = await res.json()
+      let user = json.data.user
+      if (user === null) {
+        return p.send("get-ka-profile error")
       }
-      p.send(`set-username ${username}`)
-      p.send(`set-password ${password}`)
+      let returnProfile = {
+        kaid: user.kaid,
+        nickname: user.nickname,
+        username: user.username,
+        points: user.points,
+        bio: user.bio,
+        joined: user.joined,
+        pin: generateSignupPin(),
+        loggedIn: false
+      }
+      res = await fetch("https://www.khanacademy.org/api/internal/graphql/avatarDataForProfile", {
+        "headers": {
+          "content-type": "application/json",
+        },
+        "referrerPolicy": "strict-origin-when-cross-origin",
+        "body": `{\"operationName\":\"avatarDataForProfile\",\"variables\":{\"kaid\":\"${user.kaid}\"},\"query\":\"query avatarDataForProfile($kaid: String!) {\\n  user(kaid: $kaid) {\\n    id\\n    avatar {\\n      name\\n      imageSrc\\n      __typename\\n    }\\n    __typename\\n  }\\n}\\n\"}`,
+        "method": "POST",
+        "mode": "cors",
+        "credentials": "include"
+      })
+      json = await res.json()
+      returnProfile.avatarSrc = json.data.user.avatar.imageSrc
+      p.kaProfile = returnProfile
+      p.send(`get-ka-profile ${JSON.stringify(returnProfile)}`)
+    }
+  },
+  {
+    name: "sign-up-with-bio-pin",
+    exec: async(args, p, peers, rm, fm) => {
+      if (p.kaProfile?.loggedIn) {
+        return p.send("sign-up-with-bio-pin already") // Already logged in
+      }
+      if (args) {
+        p.deviceId = args // "offerHash" in index.html to disguise it
+      }
+      // No args are inputted
+
+      
+      let res = await fetch("https://www.khanacademy.org/api/internal/graphql/getFullUserProfile", {
+        "headers": {
+          "content-type": "application/json",
+        },
+        "referrerPolicy": "strict-origin-when-cross-origin",
+        "body": `{\"operationName\":\"getFullUserProfile\",\"variables\":{\"kaid\":\"${p.kaProfile?.kaid}\"},\"query\":\"query getFullUserProfile($kaid: String, $username: String) {\\n  user(kaid: $kaid, username: $username) {\\n    id\\n    kaid\\n    key\\n    userId\\n    email\\n    username\\n    profileRoot\\n    gaUserId\\n    qualarooId\\n    isPhantom\\n    isDeveloper: hasPermission(name: \\\"can_do_what_only_admins_can_do\\\")\\n    isCurator: hasPermission(name: \\\"can_curate_tags\\\", scope: ANY_ON_CURRENT_LOCALE)\\n    isCreator: hasPermission(name: \\\"has_creator_role\\\", scope: ANY_ON_CURRENT_LOCALE)\\n    isPublisher: hasPermission(name: \\\"can_publish\\\", scope: ANY_ON_CURRENT_LOCALE)\\n    isModerator: hasPermission(name: \\\"can_moderate_users\\\", scope: GLOBAL)\\n    isParent\\n    isSatStudent\\n    isTeacher\\n    isDataCollectible\\n    isChild\\n    isOrphan\\n    isCoachingLoggedInUser\\n    canModifyCoaches\\n    nickname\\n    hideVisual\\n    joined\\n    points\\n    countVideosCompleted\\n    bio\\n    soundOn\\n    muteVideos\\n    showCaptions\\n    prefersReducedMotion\\n    noColorInVideos\\n    autocontinueOn\\n    newNotificationCount\\n    canHellban: hasPermission(name: \\\"can_ban_users\\\", scope: GLOBAL)\\n    canMessageUsers: hasPermission(name: \\\"can_send_moderator_messages\\\", scope: GLOBAL)\\n    isSelf: isActor\\n    hasStudents: hasCoachees\\n    hasClasses\\n    hasChildren\\n    hasCoach\\n    badgeCounts\\n    homepageUrl\\n    isMidsignupPhantom\\n    includesDistrictOwnedData\\n    preferredKaLocale {\\n      id\\n      kaLocale\\n      status\\n      __typename\\n    }\\n    underAgeGate {\\n      parentEmail\\n      daysUntilCutoff\\n      approvalGivenAt\\n      __typename\\n    }\\n    authEmails\\n    signupDataIfUnverified {\\n      email\\n      emailBounced\\n      __typename\\n    }\\n    pendingEmailVerifications {\\n      email\\n      unverifiedAuthEmailToken\\n      __typename\\n    }\\n    tosAccepted\\n    shouldShowAgeCheck\\n    __typename\\n  }\\n  actorIsImpersonatingUser\\n}\\n\"}`,
+        "method": "POST",
+        "mode": "cors",
+        "credentials": "include"
+      })
+      let json = await res.json()
+      let bio = json.data.user.bio
+      let pin = p.kaProfile?.pin
+      if (pin && bio.includes(pin)) {
+        p.kaProfile.loggedIn = true
+        let password = generatePassword()
+        let uid = await fm.addProfile(p.kaProfile, password, p.ipInfo?.ip, p.deviceId)
+        p.send("sign-up-with-bio-pin success")
+        p.send("set-uid " + uid)
+        p.send("set-password " + password)
+      } else {
+        p.send("sign-up-with-bio-pin error")
+      }
     }
   },
   {
     name: "auto-login",
-    exec: (args, p) => {
-      let username = args.split(" ")[0];
-      let password = args.split(" ")[1];
-
-      // Check if username and password are valid
-      /// ...
+    exec: async(args, p, peers, rm, fm) => {
+      if (p.kaProfile?.loggedIn) {
+        return p.send("auto-login already") // Already logged in
+      }
+      let argsSplit = args.split(" ")
+      let uid = argsSplit[0];
+      let password = argsSplit[1];
+      p.deviceId = argsSplit[2];
+      let resProfile = await fm.logInProfile(uid, password, p.ipInfo?.ip, p.deviceId)
+      if (resProfile) {
+        p.kaProfile = resProfile
+        p.kaProfile.loggedIn = true
+        p.send("auto-login success")
+        p.send("set-uid " + uid)
+      } else {
+        p.send("auto-login error")
+      }
     }
   },
   {

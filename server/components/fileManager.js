@@ -22,6 +22,8 @@ That's it! No need to change anything else.
 
 import fs from 'fs';
 import path from 'path';
+import bcrypt from 'bcrypt';
+const saltRounds = 8;
 
 function trimTo(str, len) {
   if (str.length > len) {
@@ -39,6 +41,7 @@ class FileManager {
     this.storage = "./storage"
     this.deno = "./storage/deno"
     this.logs = "./storage/logs"
+    this.profile = "./storage/profile"
     this.logLengthLimit = 100;
     this.projectInfoCache = []
     this.defaultClient =
@@ -57,7 +60,7 @@ class FileManager {
 </html>`;
     this.defaultServer = (projName) => `console.log('Hello world!');`;
 
-    // Check if storage, deno, and logs directories exist
+    // Check if storage, deno, logs, and profile directories exist
     if (!fs.existsSync(this.storage)) {
       fs.mkdirSync(this.storage);
     }
@@ -67,12 +70,17 @@ class FileManager {
     if (!fs.existsSync(this.logs)) {
       fs.mkdirSync(this.logs);
     }
+    if (!fs.existsSync(this.profile)) {
+      fs.mkdirSync(this.profile);
+    }
 
     // Add "program started" to log
-    this.log("", "")
-    this.log("", " ====================================== ")
-    this.log("", "             SERVER STARTED             ")
-    this.log("", " ====================================== ")
+    (async () => {
+      await this.log("", "")
+      await this.log("", " ====================================== ")
+      await this.log("", "             SERVER STARTED             ")
+      await this.log("", " ====================================== ")
+    })()
 
 
   }
@@ -89,7 +97,7 @@ class FileManager {
     let seconds = date.getUTCSeconds().toString().padStart(2, '0')
     return `${hours}:${minutes}:${seconds}`
   }
-  
+
   getDatestamp() {
     let date = new Date()
     let year = date.getUTCFullYear().toString().padStart(4, '0')
@@ -97,11 +105,11 @@ class FileManager {
     let day = date.getUTCDate().toString().padStart(2, '0')
     return `${year}-${month}-${day}`
   }
-    
+
   async log(uid, data) {
     // Append to log file
-    let filePath = path.join(this.logs, this.getDatestamp()+".log")
-    await fs.promises.appendFile(filePath, `${this.getTimestamp()} ${uid} ${data}`.slice(0, this.logLengthLimit)+"\n");
+    let filePath = path.join(this.logs, this.getDatestamp() + ".log")
+    await fs.promises.appendFile(filePath, `${this.getTimestamp()} ${uid} ${data}`.slice(0, this.logLengthLimit) + "\n");
   }
 
   // Getters
@@ -234,10 +242,54 @@ class FileManager {
     let canWrite = await this.canWrite(projectName, writerUid)
     if (canWrite) {
       let denoProjectPath = path.join(this.deno, projectName)
-      await fs.promises.rmdir(denoProjectPath, {recursive: true})
+      await fs.promises.rmdir(denoProjectPath, { recursive: true })
     } else {
       throw new Error(`${writerUid} does not have permission to delete ${projectName}`)
     }
+  }
+
+  async addProfile(kaProfile, password, ipAddress, deviceId) {
+    let uid = kaProfile.username || kaProfile.kaid
+    kaProfile.uid = uid
+    kaProfile.passwordHash = await bcrypt.hash(password, saltRounds)
+    kaProfile.ipAddresses = [ipAddress]
+    kaProfile.deviceIds = [deviceId]
+    await this.saveProfile(kaProfile)
+    return uid
+  }
+
+  async saveProfile(kaProfile) {
+    let uid = kaProfile.username || kaProfile.kaid
+    let profilePath = path.join(this.profile, uid)
+    await fs.promises.writeFile(profilePath, JSON.stringify(kaProfile, null, 2))
+  }
+
+  async logInProfile(uid, password, ipAddress, deviceId) {
+    let profile = await this.getProfile(uid)
+    if (profile) {
+      let passwordMatch = await bcrypt.compare(password, profile.passwordHash)
+      if (passwordMatch) {
+        if (ipAddress && !profile.ipAddresses.includes(ipAddress)) {
+          profile.ipAddresses.push(ipAddress)
+        }
+        if (deviceId && !profile.deviceIds.includes(deviceId)) {
+          profile.deviceIds.push(deviceId)
+        }
+        await this.saveProfile(profile)
+        return profile
+      }
+    }
+    return false
+  }
+
+  async getProfile(uid) {
+    let profilePath = path.join(this.profile, uid)
+    try {
+      var profile = await fs.promises.readFile(profilePath)
+    } catch (e) {
+      return false
+    }
+    return JSON.parse(profile)
   }
 
 
