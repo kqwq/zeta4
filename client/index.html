@@ -304,6 +304,14 @@
       height: 100%;
       border: 0;
     }
+
+    /* STYLE.BUILD */
+    #home-build label {
+      font-size: 16px;
+      font-weight: bold;
+      color: #0A2A66;
+    margin-bottom: 0;
+    }
   </style>
 </head>
 
@@ -335,7 +343,7 @@
         onmouseleave="putInstructions()" id="btn-login">Login</button>
       <button class="btn-glass" onclick="chPage('home-games')" onmouseenter="putInstructions('enter')"
         onmouseleave="putInstructions()">Enter</button>
-      <button class="btn-glass" onclick="createProject()" onmouseenter="putInstructions('build')"
+      <button class="btn-glass" onclick="chPage('home-build')" onmouseenter="putInstructions('build')"
         onmouseleave="putInstructions()">Build</button>
     </div>
 
@@ -343,8 +351,8 @@
       <span id="home-instructions"></span>
       <span id="logged-in-as-container" style="display:none">Logged in as <span id="logged-in-as"></span> <a
           href="javascript:void(0)" onclick="chName()" id="edit-name">edit name</a></span>
-      <span id="white-screen">White screen? <a href="javascript:void(0)" onclick="hideGraphics(true)">hide graphics</a> - <a
-          href="javascript:void(0)" onclick="hideGraphics(false)">dismiss</a></span>
+      <span id="white-screen">White screen? <a href="javascript:void(0)" onclick="hideGraphics(true)">hide graphics</a>
+        - <a href="javascript:void(0)" onclick="hideGraphics(false)">dismiss</a></span>
       <span id="not-connected" style="display:none">You are disconnected <a href="javascript:void(0)"
           onclick="connectToServer()">reconnect</a></span>
     </div>
@@ -399,10 +407,6 @@
     <button class="btn btn-danger" onclick="deleteProject()" id="kam-proj-delete">Delete</button>
   </div>
 
-  <div class="container page" id="home-games-project-loading">
-    <h4>Getting things ready...</h4>
-  </div>
-
   <div class="page mt-5" id="home-games-project-edit">
     <div id="view-server">function foo(items) {
       var x = "All this is syntax highlighted";
@@ -442,6 +446,74 @@
   </div>
 
   <div class="page" id="home-games-project-join">
+  </div>
+
+  <div class="page container mt-5" id="home-build">
+    <p id="disclaimer" style="border: dotted black 2px; padding: 10px"><b>DISCLAIMER - PLEASE READ </b><br>
+      Your deno project can be publicly removed by the server admin for any reason, such as:<br>
+      - Your project is not compatible with the latest version of the server<br>
+      - Your project contains malicious code (without permission)<br>
+      - Your project contains violent or adult content<br>
+      - Your project contains copyrighted content<br>
+      - Your project attempts compromise its users' privacy<br>
+      Do not use this app to engage in illegal activities.<br>
+      <button onclick="acceptDisclaimer()">Ok, I agree</button>
+    </p>
+    <h3>Build deno project</h3>
+    <div class="row">
+      
+      <div class="col-md-12">
+        <p>Jumpstart your progress by starting from a template. Full explanation and code docs are given in the
+          <b>default</b> template.
+        </p>
+        <div class="dropdown">
+          <button class="btn btn-secondary dropdown-toggle" id="build-dropdown-toggle" type="button" id="triggerId" data-bs-toggle="dropdown"
+            aria-haspopup="true" aria-expanded="false">
+            Choose template
+          </button>
+          <button id="build-refresh" class="btn btn-success" onclick="refreshTemplateOptions()">Refresh</button>
+          <div id="build-dropdown-menu" class="dropdown-menu" aria-labelledby="triggerId" style="height: 300px; overflow-y: scroll;">
+            <h6 class="dropdown-header">Start here</h6>
+            <a class="dropdown-item" href="javascript:void(0)">default</a>
+            <div class="dropdown-divider"></div>
+            <h6 class="dropdown-header">Basic</h6>
+            <div id="template-basic">
+            </div>
+            <div class="dropdown-divider"></div>
+            <h6 class="dropdown-header">Community</h6>
+            <div id="template-community">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <h5 class="mt-3">Template:<span id="build-title"></span></h5>
+    <form class="row">
+      <div class="form-group col-8">
+        <label for="build-new-name">New name</label>
+        <input type="text" class="form-control" id="build-new-name" placeholder="Project name">
+      </div>
+      <div class="form-group col-4">
+        <label for="build-version">Version</label>
+        <input type="text" class="form-control" id="build-version" placeholder="1.0">
+      </div>
+      <div class="form-group col-12">
+        <label for="build-desc">Description</label>
+        <!-- Multi-line -->
+        <textarea class="form-control" id="build-desc" rows="3"></textarea>
+      </div>
+      <div class="form-group col-6" style="margin-left: 20px">
+
+        <input class="form-check-input" type="checkbox" value="" id="build-is-template">
+        <label class="form-check-label" for="build-is-template">List as Template</label>
+      </div>
+
+    </form>
+    <div class="mb-3">
+      <button id="build-back" class="btn btn-dark" onclick="chPage('home')">Back</button>
+      <button id="build-create" class="btn btn-primary" disabled onclick="buildProjectFromTemplate()">Create</button>
+      <a href="javascript:void(0)" style="float:right" onclick="viewDisclaimer()">View disclaimer</a>
+    </div>
   </div>
 
   <div id="view-stdout">
@@ -744,10 +816,6 @@
         }
         document.getElementById('game-list').innerHTML = denoListHtml
       }
-      function createProject() {
-        chPage('home-games-project-loading');
-        send("!deno-create-project")
-      }
       function aboutProject(projName) {
         myProject = projName ? projects.find(p => p.name == projName) : myProject;
         // Update html
@@ -927,6 +995,7 @@
         if (page === "home") {
           if (isConnected) send("!globe")
           document.getElementById("view-stdout").style.display = "none";
+          document.getElementById("kam-views").style.display = "none";
         } else if (page == "home-games-project-edit") {
           document.getElementById("kam-views").style.display = "inline";
           chView("html");
@@ -998,6 +1067,7 @@
         } else if (firstArg === 'deno-set-projects') {
           projects = JSON.parse(secondArg)
           populateProjects()
+          populateTemplateOptions();
         } else if (firstArg === 'deno-set-server') {
           projectServerCode = secondArg
           editorServer.getSession().setValue(projectServerCode)
@@ -1067,7 +1137,7 @@
             alert("Success! You can now log in as " + fetchingUsername + " automatically.")
             // Remove login button on home page
             document.getElementById("btn-login").style.display = "none"
-      document.getElementById("edit-name").innerHTML = "log out"
+            document.getElementById("edit-name").innerHTML = "log out"
             chPage("home")
           } else if (secondArg === "error") {
             alert(`Your bio does not contain the PIN ${bioChangePIN}`)
@@ -1081,11 +1151,15 @@
           } else if (secondArg === "success") {
             // Remove login button on home page
             document.getElementById("btn-login").style.display = "none"
-      document.getElementById("edit-name").innerHTML = "log out"
+            document.getElementById("edit-name").innerHTML = "log out"
+          }
+        } else if (firstArg === "deno-create-project") {
+          if (secondArg === "error") {
+            alert("There was an error creating the project")
           }
         }
       }
-      
+
 
       var serverIp = "173.79.147.118"
       var linkId = "5918360080531456"
@@ -1242,20 +1316,102 @@
             ele.innerHTML = ""
           }
         })
-        if (terminalActive && editorStatusCountup >= 0) {
-          editorStatusCountup += 0.25
+      }, 250)
+
+      // If terminal is active, increment the editor-status countup
+      setInterval(() => {
+        if (editorStatusCountup >= 0) {
+          editorStatusCountup += 1
           let hours = Math.floor(editorStatusCountup / 3600)
           let minutes = Math.floor((editorStatusCountup - hours * 3600) / 60)
-          let seconds = (editorStatusCountup - hours * 3600 - minutes * 60).toFixed(1)
+          let seconds = Math.floor(editorStatusCountup - hours * 3600 - minutes * 60)
           document.getElementById("editor-status").textContent = `${hours}h ${minutes}m ${seconds}s`
         }
-      }, 250)
+      }, 1000)
 
 
 
 
     }
 
+  </script>
+
+  <script type>
+    // SCRIPT.BUILD
+    // Detect dropdown selection without jQuery
+    var dropdown = document.querySelector('#build-dropdown-menu');
+    document.querySelector('#build-dropdown-toggle').addEventListener('click', function () {
+      dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+    });
+    function onTemplateSelect(projName) {
+      let projectMatch = projects.find(proj => proj.name == projName)
+      document.querySelector('#build-title').innerHTML = projName;
+      document.querySelector('#build-version').value = projectMatch.version
+      document.querySelector('#build-desc').value = projectMatch.desc
+    }
+    function acceptDisclaimer() {
+      document.querySelector('#disclaimer').style.display = 'none';
+      document.querySelector('#build-create').disabled = false;
+    }
+    function viewDisclaimer() {
+      document.querySelector('#disclaimer').style.display = 'block';
+      window.scrollTo(0, 0);
+    }
+    function populateTemplateOptions() {
+      let templateBasic = document.querySelector('#template-basic');
+      let templateCommunity = document.querySelector('#template-community');
+      projects.filter(proj => !proj.isTemplate).forEach(function (proj) {
+        let option = document.createElement('a');
+        option.className = 'dropdown-item';
+        option.href = '#';
+        option.textContent = proj.name;
+        let templateOptions = proj.isBasicTemplate ? templateBasic : templateCommunity;
+        templateOptions.appendChild(option);
+      });
+
+      document.querySelectorAll('#build-dropdown-menu a').forEach(function (element) {
+        element.addEventListener('click', function () {
+          dropdown.style.display = 'none';
+          let name = element.textContent;
+          onTemplateSelect(name);
+        });
+      });
+    }
+    function refreshTemplateOptions() {
+      document.querySelector('#build-refresh').disabled = true;
+      let templateBasic = document.querySelector('#template-basic');
+      let templateCommunity = document.querySelector('#template-community');
+      templateBasic.innerHTML = '';
+      templateCommunity.innerHTML = '';
+      send("!deno-get-projects")
+    }
+    function buildProjectFromTemplate() {
+      let projBasedOn = document.querySelector('#build-title').innerHTML;
+      let projName = document.querySelector('#build-new-name').value;
+      let projVersion = document.querySelector('#build-version').value;
+      let projDesc = `Based on ${projBasedOn}.\n${document.querySelector('#build-desc').value}`;
+      let projIsTemplate = document.querySelector('#build-is-template').checked;
+      if (projName == '') {
+        alert('Project name cannot be empty');
+        return;
+      }
+      if (projects.find(proj => proj.name == projName)) {
+        alert('Project name already exists');
+        return;
+      }
+      if (projBasedOn == '') {
+        alert('Please select a template');
+        return;
+      }
+      let projObj = {
+        basedOn: projBasedOn,
+        name: projName,
+        desc: projDesc,
+        version: projVersion,
+        isTemplate: projIsTemplate,
+      };
+      send('!deno-create-project ' + JSON.stringify(projObj));
+    }
   </script>
   <script type>
     var term = new Terminal({
@@ -1319,11 +1475,6 @@
       "selectionBackground": "#444444",
       "cursorColor": "#d0d0d0"
     });
-
-
-
-
-
     document.getElementById('view-stdout').style.display = 'none';
   </script>
   <script></script>

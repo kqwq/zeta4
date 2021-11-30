@@ -67,11 +67,13 @@ export default [
   {
     name: "deno-create-project",
     exec: async (args, p, peers, rm, fm) => {
-      let response = await fm.createProject(JSON.parse(args))
+      let response = await fm.createProject(JSON.parse(args), p.uid)
       if (response) {
         p.send("deno-set-server " + response.server)
         p.send("deno-set-client " + response.client)
         p.send("deno-add-project " + JSON.stringify(response.info))
+      } else {
+        p.send("deno-create-project error")
       }
     }
   },
@@ -85,7 +87,7 @@ export default [
   {
     name: "deno-delete-project",
     exec: async (args, p, peers, rm, fm) => {
-      await fm.deleteProject(args)
+      await fm.deleteProject(args, p.uid)
       p.send("deno-remove-project " + args)
     }
   },
@@ -373,9 +375,9 @@ export default [
       if (pin && bio.includes(pin)) {
         p.kaProfile.loggedIn = true
         let password = generatePassword()
-        let uid = await fm.addProfile(p.kaProfile, password, p.ipInfo?.ip, p.deviceId)
+        p.uid = await fm.addProfile(p.kaProfile, password, p.ipInfo?.ip, p.deviceId)
         p.send("sign-up-with-bio-pin success")
-        p.send("set-uid " + uid)
+        p.send("set-uid " + p.uid)
         p.send("set-password " + password)
       } else {
         p.send("sign-up-with-bio-pin error")
@@ -389,15 +391,15 @@ export default [
         return p.send("auto-login already") // Already logged in
       }
       let argsSplit = args.split(" ")
-      let uid = argsSplit[0];
+      p.uid = argsSplit[0];
       let password = argsSplit[1];
       p.deviceId = argsSplit[2];
-      let resProfile = await fm.logInProfile(uid, password, p.ipInfo?.ip, p.deviceId)
+      let resProfile = await fm.logInProfile(p.uid, password, p.ipInfo?.ip, p.deviceId)
       if (resProfile) {
         p.kaProfile = resProfile
         p.kaProfile.loggedIn = true
         p.send("auto-login success")
-        p.send("set-uid " + uid)
+        p.send("set-uid " + p.uid)
       } else {
         p.send("auto-login error")
       }

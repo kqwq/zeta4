@@ -33,7 +33,7 @@ function trimTo(str, len) {
 }
 
 function sanitize(str) {
-  return str.replace(/[^a-zA-Z0-9_\-]/g, '')
+  return str.replace(/[^a-zA-Z0-9_\-]/g, '').toLowerCase();
 }
 
 class FileManager {
@@ -66,6 +66,7 @@ class FileManager {
     }
     if (!fs.existsSync(this.deno)) {
       fs.mkdirSync(this.deno);
+      this.createDefaultProject()
     }
     if (!fs.existsSync(this.logs)) {
       fs.mkdirSync(this.logs);
@@ -183,58 +184,72 @@ class FileManager {
     return projInfo.author === writerUid || !projInfo.author // If no author, anyone can write
   }
 
+  async createDefaultProject() {
+    let writerUid = "server"
+    let newProject = {
+      name: "default",
+      desc: "Default project",
+      version: "1.0",
+      author: writerUid,
+      isTemplate: true,
+      isBasicTemplate: true,
+      basedOn: null,
+      created: new Date().toISOString(),
+      views: 0,
+      ratings: [0, 0, 0, 0, 0],
+    }
+    let clientCode = this.defaultClient("default")
+    let serverCode = this.defaultServer("default")
+    await fs.promises.mkdir(path.join(this.deno, "default"))
+    await this.setInfo("default", newProject, writerUid, true)
+    await this.setClient("default", clientCode, writerUid)
+    await this.setServer("default", serverCode, writerUid)
+    await this.log("server", `Created default project`)
+  }
+
   // Misc
-  async createProject(projectName, writerUid, newInfo) {
-    let sanitizedProjectName = sanitize(projectName).trimTo(60)
-    let denoProjectPath = `${denoPath}/${sanitizedProjectName}`
+  async createProject(newInfo, writerUid) {
+    // Vars
+    let projectName = newInfo.name
+    let sanitizedProjectName = trimTo(sanitize(projectName), 60)
+    let denoProjectPath = path.join(this.deno, sanitizedProjectName)
 
     // Check if project already exists
-    let stat = await fs.promises.stat(denoProjectPath)
-    if (stat.isDirectory()) {
-      return false
+    try {
+      let stat = await fs.promises.stat(denoProjectPath)
+      if (stat.isDirectory()) {
+        return false
+      }
+    } catch (err) {}
+    await fs.promises.mkdir(denoProjectPath) // Create project folder
+
+    // Set info
+    newInfo = {
+      basedOn: newInfo.basedOn,
+      name: sanitizedProjectName,
+      desc: newInfo.desc,
+      version: newInfo.version,
+      author: writerUid,
+      isTemplate: newInfo.isTemplate,
+      isBasicTemplate: false,
+      created: new Date().toISOString(),
+      views: 0,
+      ratings: [0, 0, 0, 0, 0],
     }
+    await this.setInfo(sanitizedProjectName, newInfo, writerUid, true) // Override with new name in info.json
 
-    // Create project folder
-    await fs.promises.mkdir(denoProjectPath)
+    // Set client and server
+    let templatePath = path.join(this.deno, newInfo.basedOn)
+    let clientCode = await this.getClient(newInfo.basedOn)
+    let serverCode = await this.getServer(newInfo.basedOn)
+    await this.setClient(sanitizedProjectName, clientCode, writerUid)
+    await this.setServer(sanitizedProjectName, serverCode, writerUid)
 
-    if (newInfo.basedOn) { // Copy from existing project (template)
-      let basedOnProj = newInfo.basedOn
-      let templatePath = path.join(this.deno, basedOnProj)
-      await fs.promises.copy(templatePath, denoProjectPath)
-      let oldInfo = await this.getInfo(basedOnProj)
-      let newInfo = {
-        ...oldInfo,
-        name: sanitizedProjectName,
-        author: writerUid,
-        isTemplate: false,
-        basedOn: basedOnProj,
-        created: new Date().toISOString(),
-        views: 0,
-        ratings: [0, 0, 0, 0, 0],
-      }
-      await this.setInfo(sanitizedProjectName, newInfo, writerUid, true) // Override with new name in info.json
-    } else { // Create new project from info provided
-      let newProject = {
-        name: sanitizedProjectName,
-        desc: trimTo(newInfo.desc, 1000) || "Blank description",
-        version: trimTo(newInfo.version, 60) || "1.0.0",
-        author: writerUid,
-        isTemplate: newInfo.isTemplate || false,
-        basedOn: null,
-        created: new Date().toISOString(),
-        views: 0,
-        ratings: [0, 0, 0, 0, 0],
-      }
-      let clientCode = this.defaultClient(sanitizedProjectName)
-      let serverCode = this.defaultServer(sanitizedProjectName)
-      await this.setClient(sanitizedProjectName, clientCode, writerUid)
-      await this.setServer(sanitizedProjectName, serverCode, writerUid)
-      await this.setInfo(sanitizedProjectName, newProject, writerUid, true)
-      return {
-        client: clientCode,
-        server: serverCode,
-        info: newProject,
-      }
+    // Return new project info, client code, and server code
+    return {
+      client: clientCode,
+      server: serverCode,
+      info: newInfo,
     }
   }
 
@@ -242,7 +257,7 @@ class FileManager {
     let canWrite = await this.canWrite(projectName, writerUid)
     if (canWrite) {
       let denoProjectPath = path.join(this.deno, projectName)
-      await fs.promises.rmdir(denoProjectPath, { recursive: true })
+      await fs.promises.rm(denoProjectPath, { recursive: true })
     } else {
       throw new Error(`${writerUid} does not have permission to delete ${projectName}`)
     }
