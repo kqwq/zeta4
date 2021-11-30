@@ -42,6 +42,9 @@ class FileManager {
     this.deno = "./storage/deno"
     this.logs = "./storage/logs"
     this.profile = "./storage/profile"
+    this.ipdb = "./storage/ipdb.json"
+    this.globe = "./storage/globe.json"
+    this.globeData = {}
     this.logLengthLimit = 100;
     this.projectInfoCache = []
     this.defaultClient =
@@ -74,6 +77,9 @@ class FileManager {
     if (!fs.existsSync(this.profile)) {
       fs.mkdirSync(this.profile);
     }
+    if (!fs.existsSync(this.globe)) {
+      fs.writeFileSync(this.globe, "{}")
+    }
 
     // Add "program started" to log
     (async () => {
@@ -81,7 +87,15 @@ class FileManager {
       await this.log("", " ====================================== ")
       await this.log("", "             SERVER STARTED             ")
       await this.log("", " ====================================== ")
+      await this.cacheGlobeData()
     })()
+
+    // On this.ipdb change, update globe
+    fs.watch(this.ipdb, async (eventType, filename) => {
+      if (eventType == "change") {
+        await this.cacheGlobeData()
+      }
+    })
 
 
   }
@@ -307,8 +321,37 @@ class FileManager {
     return JSON.parse(profile)
   }
 
+  async cacheGlobeData() {
+    console.log("Caching globe data...");
+    let res = await fs.promises.readFile(this.ipdb)
+    let data = JSON.parse(res)
+    let coords = data.filter(p => p.loc).map(p => {
+      let [lat, lng] = p.loc.split(",").map(x => Math.round(parseFloat(x)))
+      return lat + "," + lng
+    })
+    this.globeData = {}
+    for (let coord of coords) {
+      let dataPoint = this.globeData[coord] 
+      if (dataPoint) {
+        this.globeData[coord].count++
+      } else {
+        this.globeData[coord] = {
+          count: 1,
+          lat: parseInt(coord.split(",")[0]),
+          lng: parseInt(coord.split(",")[1]),
+        }
+      }
+    }
+    this.globeData = Object.values(this.globeData)
+    (async () => {
+      await fs.promises.writeFile(this.globe, JSON.stringify(this.globeData))
+      await this.log("server", `Cached globe data`)
+    })()
+  }
 
-
+  getGlobeData() {
+    return this.globeData
+  }
 }
 
 export { FileManager }

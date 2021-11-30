@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="utf-8">
-  <title>Progress</title>
+  <title>Client 4.3</title>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/simple-peer/9.11.0/simplepeer.min.js"></script>
@@ -390,7 +390,7 @@
 
   <div class="container page mt-5" id="home-games">
     <h3>Games</h3>
-    <button onclick="getProjects()" class="btn btn-dark btn-sm">Refresh</button>
+    <button onclick="getProjects()" class="btn btn-success btn-sm">Refresh</button>
     <div id="game-list"> </div>
   </div>
 
@@ -400,10 +400,10 @@
     Version: <p id="kam-proj-version" contenteditable="true">v</p>
     Author: <b id="kam-proj-author">a</b>
     <br><br>
-    <button class="btn btn-success" onclick="joinProject()" id="kam-proj-join">Join</button>
+    <button class="btn btn-primary" onclick="joinProject()" id="kam-proj-join">Join</button>
     <button class="btn btn-dark" onclick="editProject()" id="kam-proj-edit">Edit</button>
     <hr />
-    <button class="btn btn-success" onclick="updateProjectInfo()" id="kam-proj-save">Update info</button>
+    <button class="btn btn-warning" onclick="updateProjectInfo()" id="kam-proj-save">Update info</button>
     <button class="btn btn-danger" onclick="deleteProject()" id="kam-proj-delete">Delete</button>
   </div>
 
@@ -546,11 +546,11 @@
       pointsData = []
       globe.pointsData([])
     }
-    function addPoint(lat, lng, color) {
+    function addPoint(lat, lng, color, count) {
       var point = {
         lat,
         lng,
-        size: 0.1,
+        size: Math.sqrt(count) * 0.1,
         color: color || "darkorange"
       }
       pointsData.push(point)
@@ -808,8 +808,8 @@
     </p>
   </div>
   <div class="game-item-actions">
-    <a href="javascript:void(0)" class="btn btn-success" onclick="joinProject('${p.name}')">Join</a>
-    <a href="javascript:void(0)" class="btn btn-dark" onclick="editProject('${p.name}')">Edit</a>
+    <a href="javascript:void(0)" class="btn btn-primary" onclick="joinProject('${p.name}')">Join</a>
+    <a href="javascript:void(0)" class="btn btn-${p.author === uid ? "dark" : "secondary"}" onclick="editProject('${p.name}')">${p.author === uid ? "Edit" : "View"}</a>
   </div>
 </div>
       `
@@ -996,6 +996,12 @@
           if (isConnected) send("!globe")
           document.getElementById("view-stdout").style.display = "none";
           document.getElementById("kam-views").style.display = "none";
+        } else if (page === "home-build") {
+          if (!uid || uid.includes('-')) {
+            alert("Log into your Khan Academy account to create projects.")
+            chPage("home")
+            return
+          }
         } else if (page == "home-games-project-edit") {
           document.getElementById("kam-views").style.display = "inline";
           chView("html");
@@ -1110,7 +1116,7 @@
             }
             clearPoints()
             for (let gd of globeData) {
-              addPoint(gd.lat, gd.lng, statusColors[gd.status])
+              addPoint(gd.lat, gd.lng, statusColors[gd.status], gd.count)
               if (gd.status === "self") {
                 myGeo = { lat: gd.lat, lng: gd.lng }
               }

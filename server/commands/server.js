@@ -181,54 +181,50 @@ export default [
       peerData.send("geo " + JSON.stringify(geoData))
     }
   },
-  {
-    name: "geos",
-    exec: (args, p, peers) => {
-      let players = peers.map(peerData => {
-        let p = peerData.ipInfo;
-        let svgLink = findFlagUrlByIso2Code(p.country);
-        let countryName = getCountry(p.country).name;
-        let timezone = getTimezone(p.timezone);
-        return {
-          loc: p.loc,
-          country: countryName,
-          iso2: p.country,
-          tz: p.timezone,
-          utcOffset: timezone.utcOffset,
-          dstOffset: timezone.dstOffset,
-          flag: svgLink
-        }
-      })
-      p.send("geos " + JSON.stringify(players))
-    }
-  },
+  // {
+  //   name: "geos",
+  //   exec: (args, p, peers) => {
+  //     let players = peers.map(peerData => {
+  //       let p = peerData.ipInfo;
+  //       let svgLink = findFlagUrlByIso2Code(p.country);
+  //       let countryName = getCountry(p.country).name;
+  //       let timezone = getTimezone(p.timezone);
+  //       return {
+  //         loc: p.loc,
+  //         country: countryName,
+  //         iso2: p.country,
+  //         tz: p.timezone,
+  //         utcOffset: timezone.utcOffset,
+  //         dstOffset: timezone.dstOffset,
+  //         flag: svgLink
+  //       }
+  //     })
+  //     p.send("geos " + JSON.stringify(players))
+  //   }
+  // },
   {
     name: "globe",
-    exec: async (args, thisPeer, peers) => {
-      let res = await fs.readFile(`./storage/ipdb.json`, 'utf8')
-      let data = JSON.parse(res)
-      let globeData = data.filter(p => p.loc).map(p => {
-
-        let [lat, lng] = p.loc.split(",").map(x => Math.round(parseFloat(x)))
-        // Check if p.ip is in peers
-        let status;
-        let peer = peers.find(peerData => peerData.ipInfo.ip === p.ip)
-        if (peer) {
-          if (peer === thisPeer) {
-            status = "self"
-          } else if (peer.room) {
-            status = "playing"
-          } else {
-            status = "online"
-          }
-        } else {
-          status = "offline"
-        }
+    exec: async (args, thisPeer, peers, gm, fm) => {
+      let globeData = fm.getGlobeData().map(g => {
         return {
-          lat: lat,
-          lng: lng,
-          status: status,
+          lat: g.lat,
+          lng: g.lng,
+          count: g.count,
+          status: "offline",
         }
+      })
+      peers.filter(p => p.ipInfo?.loc).forEach(peerData => {
+        let loc = peerData.ipInfo?.loc
+        let [ lat, lng ] = loc.split(",").map(v => Math.round(parseFloat(v)))
+        let status
+        if (peerData.room) {
+          status = "playing"
+        } else if (peerData.uid === thisPeer.uid) {
+          status = "self"
+        } else {
+          status = "online"
+        }
+        globeData.find(g => g.lat === lat && g.lng === lng).status = status
       })
       thisPeer.send("globe " + JSON.stringify(globeData))
     }
