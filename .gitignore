@@ -2,4 +2,3 @@
 */node_modules
 server/storage/*
 !server/storage/.gitkeep
-!server/storage/deno/default/*

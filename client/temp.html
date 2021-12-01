@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<!--
+
+  Khan    Academy
+  ██╗  ██╗ █████╗     ███╗   ███╗
+  ██║ ██╔╝██╔══██╗    ████╗ ████║
+  █████╔╝ ███████║    ██╔████╔██║
+  ██╔═██╗ ██╔══██║    ██║╚██╔╝██║
+  ██║  ██╗██║  ██║    ██║ ╚═╝ ██║etaverse
+  ╚═╝  ╚═╝╚═╝  ╚═╝    ╚═╝     ╚═╝
+                                 
+  Please switch to the "view" tab, top-right of screen.
+  
+  -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>default</title>
+
+  <!-- Bootstrap + jQuery -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.5.3/css/bootstrap.min.css" />
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.5.3/js/bootstrap.min.js"></script>
+
+  <!-- Highlight.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/highlight.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/styles/a11y-dark.min.css" />
+  <script>hljs.highlightAll();</script>
+</head>
+<body>
+  <div class="container">
+    <div class="row mt-3">
+      <h2>Help page</h2>
+      <div class="col-12">
+        <p>This is your deno project, a part of the KA metaverse. Every deno project consists of two parts: a client
+          (html/view) and server (server/stdout).</p>
+        <p>To save, click the save button in the top right corner of the output window. Your project is stored in the
+          cloud and can be accessed from anywhere.</p>
+      </div>
+    </div>
+    <hr />
+    <div class="row">
+      <h2>Client reference</h2>
+      <div class="dropdown">
+        <button class="btn btn-primary dropdown-toggle ml-2" href="#" id="triggerId" type="button"
+          data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">How to...</button>
+        <div id="howto-client" class="dropdown-menu" aria-labelledby="triggerId"></div>
+      </div>
+    </div>
+    <h4 id="h-client">How do I...</h4>
+    <pre><code class="language-js" id="output-client"></code></pre>
+    <hr />
+    <div class="row">
+      <h2>Server reference</h2>
+      <div class="dropdown">
+        <button class="btn btn-primary dropdown-toggle ml-2" href="#" id="triggerId" type="button"
+          data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">How to...</button>
+        <div id="howto-server" class="dropdown-menu" aria-labelledby="triggerId"></div>
+      </div>
+    </div>
+    <h4 id="h-server">How do I...</h4>
+    <pre><code class="language-js" id="output-server"></code></pre>
+    <hr />
+  </div>
+</body>
+<script>
+addEventListener("message", ({ source, data }) => {
+  if (!source.uid) return;
+  doStuff(JSON.parse(data));
+});
+
+function doStuff(data) {
+  if (data.command === "get-howto-list") {
+    for (let file of data.response) {
+      let option = $("<a>").addClass('dropdown-item')
+        .prop("href", "javascript:void(0)")
+        .text(file.split("/")[1].split(".")[0])
+        .click(getHowto)
+        .prop("id", file);
+      let dropdown = $("#howto-" + (file.startsWith("client") ? "client" : "server"));
+      dropdown.append(option);
+    }
+  } else if (data.command === "get-howto") {
+    let name = data.response.fileName;
+    let cOrS = name.startsWith("client") ? "client" : "server";
+    let output = $("#output-" + cOrS)[0].textContent = (data.response.code);
+    $("#h-" + cOrS).text("How do I " + name.split("/")[1].split(".")[0]);
+    hljs.highlightAll();
+  }
+}
+
+function getHowto(e) {
+  postMessage({
+    denoCommand: "!get-howto " + $(this).prop("id")
+  }, "*");
+}
+
+postMessage({
+  denoCommand: "!get-howto-list"
+}, "*");
+postMessage({
+  denoCommand: "!get-howto client/send data to server.js"
+}, "*");
+postMessage({
+  denoCommand: "!get-howto server/send data to client.js"
+});
+</script>
+</html>

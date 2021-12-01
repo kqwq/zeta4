@@ -5,6 +5,7 @@ let whitelistedDomains = [
 ];
 
 import fetch from "node-fetch";
+import fs from "fs";
 
 /**
  * In this command list, it is VERY important to send a message beginning with the caret sign (^)
@@ -132,7 +133,39 @@ export default [
       }
     }
 
-  }
+  },
+  {
+    name: 'get-howto-list',
+    exec: async(args, room) => {
+      // List of files under the "howto" folder
+      let clientFiles = await fs.promises.readdir("./howto/client");
+      let serverFiles = await fs.promises.readdir("./howto/server");
+      let files = [...clientFiles.map(f => `client/${f}`), ...serverFiles.map(f => `server/${f}`)];
+
+      // Get the file names
+      sendToDenoProcess(room, 'get-howto-list', files);
+    }
+  },
+  {
+    name: 'get-howto',
+    exec: (args, room) => {
+      (async () => {
+        // Get the file name, remove newline, prevent directory traversal
+        let fileName = args.replace(/\n/g, "").replace(/\.\./g, "");
+        let code
+        try {
+          code = await fs.promises.readFile(`./howto/${fileName}`, 'utf8');
+        } catch (e) {
+          sendToDenoProcess(room, 'get-howto', `Could not find file ${fileName}`);
+          return
+        }
+        sendToDenoProcess(room, 'get-howto', {
+          fileName: fileName,
+          code: code
+        });
+      })();
+    }
+  },
 
 
 ]

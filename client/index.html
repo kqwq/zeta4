@@ -451,13 +451,13 @@
   <div class="page container mt-5" id="home-build">
     <p id="disclaimer" style="border: dotted black 2px; padding: 10px"><b>DISCLAIMER - PLEASE READ </b><br>
       Your deno project can be publicly removed by the server admin for any reason, such as:<br>
-      - Your project is not compatible with the latest version of the server<br>
-      - Your project contains malicious code (without permission)<br>
-      - Your project contains violent or adult content<br>
-      - Your project contains copyrighted content<br>
-      - Your project attempts compromise its users' privacy<br>
-      Do not use this app to engage in illegal activities.<br>
-      <button onclick="acceptDisclaimer()">Ok, I agree</button>
+      - it's not compatible with the latest version of the server<br>
+      - contains malicious code (without permission)<br>
+      - contains violence, gore, or adult content<br>
+      - contains copyrighted content<br>
+      - attempts to compromise its users' privacy<br>
+      Please agree that you will not this app for illegal activities.<br>
+      <button onclick="acceptDisclaimer()">I agree</button>
     </p>
     <h3>Build deno project</h3>
     <div class="row">
@@ -645,6 +645,7 @@
   <!-- SCRIPT.LOGIN -->
   <script type>
     var uid = ""
+    var oh = "incognito"
     var bioChangePIN = "error";
     var ppAnimation = 1;
     var ppAnimationTarget = 1;
@@ -690,7 +691,7 @@
     }
     function verifyBioChange() {
       document.getElementById("btn-verify").disabled = true;
-      send(`!sign-up-with-bio-pin ${localStorage.getItem("ka.metaverse:offerHash")}`)
+      send(`!sign-up-with-bio-pin ${oh || localStorage.getItem("ka.metaverse:offerHash")}`)
     }
 
     function ppKeyframe(p) { // p = percentage of animation
@@ -1096,10 +1097,10 @@
           populateProjects()
         } else if (firstArg === 'set-uid') {
           uid = secondArg
-          localStorage.setItem("ka.metaverse:uid", uid)
           document.getElementById("logged-in-as-container").style.display = "block"
           document.getElementById("logged-in-as").innerText = uid
           document.getElementById("kam-status").textContent = "✓"
+          localStorage.setItem("ka.metaverse:uid", uid)
         } else if (firstArg === "set-uid-error") {
           console.error(firstArg, secondArg)
           if (secondArg.includes("taken")) alert("Username already taken")
@@ -1300,10 +1301,14 @@
           send("!globe") // Get globe data
 
           // Auto-login or create guest account
-          uid = localStorage.getItem("ka.metaverse:uid")
-          let password = localStorage.getItem("ka.metaverse:password")
-          let oh = localStorage.getItem("ka.metaverse:offerHash")
-          localStorage.setItem("ka.metaverse:offerHash", oh || Math.random().toString())
+          try {
+            uid = localStorage.getItem("ka.metaverse:uid")
+            var password = localStorage.getItem("ka.metaverse:password")
+            oh = localStorage.getItem("ka.metaverse:offerHash")
+            localStorage.setItem("ka.metaverse:offerHash", oh || Math.random().toString())
+          } catch (e) {
+            console.log("LocalStorage is not available, which is OK")
+          }
           if (uid && password && !uid.includes("-")) { // If uid has dash, it's a default guest/custom guest account
             document.getElementById("kam-status").innerHTML = 'Logging in<span class="loading"></span>'
             send(`!auto-login ${uid} ${password} ${oh}`) // Login to the server
@@ -1353,7 +1358,7 @@
       let projectMatch = projects.find(proj => proj.name == projName)
       document.querySelector('#build-title').innerHTML = projName;
       document.querySelector('#build-version').value = projectMatch.version
-      document.querySelector('#build-desc').value = projectMatch.desc
+      document.querySelector('#build-desc').value = `Based on ${projName}\n${projectMatch.desc}`.slice(0, 140)
     }
     function acceptDisclaimer() {
       document.querySelector('#disclaimer').style.display = 'none';
@@ -1364,9 +1369,10 @@
       window.scrollTo(0, 0);
     }
     function populateTemplateOptions() {
+      document.querySelector("#build-refresh").disabled = false;
       let templateBasic = document.querySelector('#template-basic');
       let templateCommunity = document.querySelector('#template-community');
-      projects.filter(proj => !proj.isTemplate).forEach(function (proj) {
+      projects.filter(proj => proj.isTemplate).forEach(function (proj) {
         let option = document.createElement('a');
         option.className = 'dropdown-item';
         option.href = '#';
@@ -1395,7 +1401,7 @@
       let projBasedOn = document.querySelector('#build-title').innerHTML;
       let projName = document.querySelector('#build-new-name').value;
       let projVersion = document.querySelector('#build-version').value;
-      let projDesc = `Based on ${projBasedOn}.\n${document.querySelector('#build-desc').value}`;
+      let projDesc = document.querySelector('#build-desc').value;
       let projIsTemplate = document.querySelector('#build-is-template').checked;
       if (projName == '') {
         alert('Project name cannot be empty');

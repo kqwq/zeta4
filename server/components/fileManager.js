@@ -241,8 +241,8 @@ class FileManager {
     newInfo = {
       basedOn: newInfo.basedOn,
       name: sanitizedProjectName,
-      desc: newInfo.desc,
-      version: newInfo.version,
+      desc: trimTo(newInfo.desc, 140),
+      version: trimTo(newInfo.version, 30),
       author: writerUid,
       isTemplate: newInfo.isTemplate,
       isBasicTemplate: false,
@@ -342,7 +342,7 @@ class FileManager {
         }
       }
     }
-    this.globeData = Object.values(this.globeData)
+    this.globeData = Object.values(this.globeData);
     (async () => {
       await fs.promises.writeFile(this.globe, JSON.stringify(this.globeData))
       await this.log("server", `Cached globe data`)

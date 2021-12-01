@@ -60,7 +60,10 @@ class Room {
 
   sendToTerminal(message) {
     if (this.isMaintenance) {
-      this.players[0]?.send("~" + message + "\n")
+      let firstPlayer = this.players?.[0]
+      if (firstPlayer && !firstPlayer.peer.destroyed) {
+        this.players[0]?.send("~" + message + "\n")
+      }
     }
   }
 
