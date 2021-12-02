@@ -1,4 +1,4 @@
-addEventListener("message", ({ souce, data }) => {
+addEventListener("message", ({ source, data }) => {
     if (!source.uid) return;
     doStuff(JSON.parse(data));
 });

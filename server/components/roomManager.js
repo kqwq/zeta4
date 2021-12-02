@@ -98,6 +98,9 @@ class Room {
       }
       that.removeAllPlayers()
     });
+    child.on('error', function (err) {
+      console.log(err)
+    });
 
 
     // Add the game to the list of games

@@ -72,6 +72,7 @@ class Peer {
   async onClose() {
     this.room?.removePlayer(this);
     console.log(`Peer closed!`);
+    peers = peers.filter(x => x != this) /// change to peers.splice(peers.indexOf(this), 1) ??
   }
 }
 
