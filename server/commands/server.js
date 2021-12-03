@@ -375,6 +375,7 @@ export default [
       let json = await res.json()
       let bio = json.data.user.bio
       let pin = p.kaProfile?.pin
+      console.log(pin, bio)
       if (pin && bio.includes(pin)) {
         p.kaProfile.loggedIn = true
         let password = generatePassword()
