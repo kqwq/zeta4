@@ -257,6 +257,9 @@ class FileManager {
 
     // Add project to profile
     let profile = await this.getProfile(writerUid)
+    if (!profile) {
+      return { error: `User ${writerUid} does not exist` }
+    }
     if (!profile.projects) {
       profile.projects = [] // Repair old format
     }
