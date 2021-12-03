@@ -261,7 +261,7 @@ class FileManager {
       return { error: `User ${writerUid} does not exist` }
     }
     if (!profile.projects) {
-      profile.projects = [] // Repair old format
+      profile.projects = [] // Repair old format TODO REMOVE
     }
     if (profile.projects.length >= this.maxProjectsPerUser) {
       return { error: `Sorry, you've reached your limit of ${this.maxProjectsPerUser} projects per user. You can delete other projects to free up space.` }
@@ -289,6 +289,17 @@ class FileManager {
     if (canWrite) {
       let denoProjectPath = path.join(this.deno, projectName)
       await fs.promises.rm(denoProjectPath, { recursive: true })
+
+      // Remove project from profile
+      let profile = await this.getProfile(writerUid)
+      if (!profile) {
+        return { error: `User ${writerUid} does not exist` }
+      }
+      if (!profile.projects) {
+        profile.projects = [] // Repair old format /// TODO REMOVE
+      }
+      profile.projects = profile.projects.filter(x => x != projectName)
+      await this.setProfile(profile)
     } else {
       throw new Error(`${writerUid} does not have permission to delete ${projectName}`)
     }
