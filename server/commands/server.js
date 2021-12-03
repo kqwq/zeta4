@@ -21,7 +21,8 @@ function generatePassword() {
 
 let denoPath = "./storage/deno";
 
-
+let maxServerCodeLength = process.env.MAX_SERVER_CODE_LENGTH || 50000
+let maxClientCodeLength = process.env.MAX_CLIENT_CODE_LENGTH || 50000
 
 export default [
   {
@@ -68,12 +69,12 @@ export default [
     name: "deno-create-project",
     exec: async (args, p, peers, rm, fm) => {
       let response = await fm.createProject(JSON.parse(args), p.uid)
-      if (response) {
+      if (response.success) {
         p.send("deno-set-server " + response.server)
         p.send("deno-set-client " + response.client)
         p.send("deno-add-project " + JSON.stringify(response.info))
       } else {
-        p.send("deno-create-project error")
+        p.send("alert " + response.error)
       }
     }
   },
@@ -111,6 +112,9 @@ export default [
     name: "deno-save-client",
     exec: async (args, p, peers, rm, fm) => {
       let argData = JSON.parse(args)
+      if (argData.code.length > maxClientCodeLength) {
+        return p.send(`alert Client's HTML code is too long - ${argData.code.length}/${maxClientCodeLength} characters used`)
+      }
       await fm.setClient(argData.project, argData.code, p.uid)
       p.send("deno-save-client-success")
     }
@@ -119,6 +123,9 @@ export default [
     name: "deno-save-and-run-server",
     exec: async (args, p, peers, rm, fm) => {
       let argData = JSON.parse(args)
+      if (argData.code.length > maxServerCodeLength) {
+        return p.send(`alert Server's deno code is too long - ${argData.code.length}/${maxServerCodeLength} characters used`)
+      }
       p.send(`~\x1b[36mdeno run ${argData.project}/server.js\x1B[0m\n`)
       await fm.setServer(argData.project, argData.code, p.uid)
       p.send("~\x1b[31mStarting deno process...\x1B[0m\n")
@@ -290,7 +297,7 @@ export default [
       let newUid = "-" + sanitize(args).slice(0, 30) + "-"
       let taken = peers.some(peerData => peerData.uid === newUid)
       if (taken) {
-        p.send("set-uid-error Already taken")
+        p.send(`alert Username ${newUid} is already taken.`)
       } else {
         p.uid = newUid
         p.send(`set-uid ${newUid}`)
@@ -347,7 +354,7 @@ export default [
     name: "sign-up-with-bio-pin",
     exec: async(args, p, peers, rm, fm) => {
       if (p.kaProfile?.loggedIn) {
-        return p.send("sign-up-with-bio-pin already") // Already logged in
+        return p.send("alert You are already logged in. Please close all KA metaverse instances and try again.") // Already logged in
       }
       if (args) {
         p.deviceId = args // "offerHash" in index.html to disguise it
@@ -376,7 +383,7 @@ export default [
         p.send("set-uid " + p.uid)
         p.send("set-password " + password)
       } else {
-        p.send("sign-up-with-bio-pin error")
+        p.send("alert There was an error signing you up. Please try again.")
       }
     }
   },

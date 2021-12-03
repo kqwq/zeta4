@@ -1049,8 +1049,10 @@
           return
         }
         let [firstArg, secondArg] = data.split(/ (.+)/s)
-        if (firstArg === "!ping") {
+        if (firstArg === "ping") {
           send("!pong")
+        } else if (firstArg === "alert") {
+          alert(secondArg)
         } else if (firstArg === "leave-room") {
           if (page === "home-games-project-join") {
             iframe.srcdoc = "";
@@ -1101,9 +1103,6 @@
           document.getElementById("logged-in-as").innerText = uid
           document.getElementById("kam-status").textContent = "✓"
           localStorage.setItem("ka.metaverse:uid", uid)
-        } else if (firstArg === "set-uid-error") {
-          console.error(firstArg, secondArg)
-          if (secondArg.includes("taken")) alert("Username already taken")
         } else if (firstArg === 'set-password') {
           localStorage.setItem("ka.metaverse:password", secondArg)
         } else if (firstArg === 'globe') {
@@ -1140,17 +1139,11 @@
           fetchUsername()
         } else if (firstArg === "sign-up-with-bio-pin") {
           document.getElementById("btn-verify").disabled = false;
-          if (secondArg === "success") {
-            alert("Success! You can now log in as " + fetchingUsername + " automatically.")
-            // Remove login button on home page
-            document.getElementById("btn-login").style.display = "none"
-            document.getElementById("edit-name").innerHTML = "log out"
-            chPage("home")
-          } else if (secondArg === "error") {
-            alert(`Your bio does not contain the PIN ${bioChangePIN}`)
-          } else if (secondArg === "already") {
-            alert(`You are already logged in to ${fetchingUsername}`)
-          }
+          alert("Success! You can now log in as " + fetchingUsername + " automatically.")
+          // Remove login button on home page
+          document.getElementById("btn-login").style.display = "none"
+          document.getElementById("edit-name").innerHTML = "log out"
+          chPage("home")
         } else if (firstArg === "auto-login") {
           if (secondArg === "error") {
             document.getElementById("kam-status").textContent = "Auto-login failed"
@@ -1159,10 +1152,6 @@
             // Remove login button on home page
             document.getElementById("btn-login").style.display = "none"
             document.getElementById("edit-name").innerHTML = "log out"
-          }
-        } else if (firstArg === "deno-create-project") {
-          if (secondArg === "error") {
-            alert("There was an error creating the project")
           }
         }
       }

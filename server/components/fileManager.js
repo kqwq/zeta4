@@ -23,6 +23,8 @@ That's it! No need to change anything else.
 import fs from 'fs';
 import path from 'path';
 import bcrypt from 'bcrypt';
+import dotenv from 'dotenv';
+dotenv.config();
 const saltRounds = 8;
 
 function trimTo(str, len) {
@@ -42,6 +44,7 @@ class FileManager {
     this.deno = "./storage/deno"
     this.logs = "./storage/logs"
     this.profile = "./storage/profile"
+    this.maxProjectsPerUser = process.env.MAX_PROJECTS_PER_USER || 5
     this.ipdb = "./storage/ipdb.json"
     this.globe = "./storage/globe.json"
     this.globeData = {}
@@ -232,7 +235,7 @@ class FileManager {
     try {
       let stat = await fs.promises.stat(denoProjectPath)
       if (stat.isDirectory()) {
-        return false
+        return { error: `Project ${projectName} already exists` }
       }
     } catch (err) {}
     await fs.promises.mkdir(denoProjectPath) // Create project folder
@@ -252,8 +255,18 @@ class FileManager {
     }
     await this.setInfo(sanitizedProjectName, newInfo, writerUid, true) // Override with new name in info.json
 
+    // Add project to profile
+    let profile = await this.getProfile(writerUid)
+    if (!profile.projects) {
+      profile.projects = [] // Repair old format
+    }
+    if (profile.projects.length >= this.maxProjectsPerUser) {
+      return { error: `Sorry, you've reached your limit of ${this.maxProjectsPerUser} projects per user. You can delete other projects to free up space.` }
+    }
+    profile.projects.push(sanitizedProjectName)
+    await this.setProfile(writerUid, profile)
+
     // Set client and server
-    let templatePath = path.join(this.deno, newInfo.basedOn)
     let clientCode = await this.getClient(newInfo.basedOn)
     let serverCode = await this.getServer(newInfo.basedOn)
     await this.setClient(sanitizedProjectName, clientCode, writerUid)
@@ -261,6 +274,7 @@ class FileManager {
 
     // Return new project info, client code, and server code
     return {
+      success: true,
       client: clientCode,
       server: serverCode,
       info: newInfo,
@@ -283,11 +297,12 @@ class FileManager {
     kaProfile.passwordHash = await bcrypt.hash(password, saltRounds)
     kaProfile.ipAddresses = [ipAddress]
     kaProfile.deviceIds = [deviceId]
-    await this.saveProfile(kaProfile)
+    kaProfile.projects = []
+    await this.setProfile(kaProfile)
     return uid
   }
 
-  async saveProfile(kaProfile) {
+  async setProfile(kaProfile) {
     let uid = kaProfile.username || kaProfile.kaid
     let profilePath = path.join(this.profile, uid)
     await fs.promises.writeFile(profilePath, JSON.stringify(kaProfile, null, 2))
@@ -304,7 +319,7 @@ class FileManager {
         if (deviceId && !profile.deviceIds.includes(deviceId)) {
           profile.deviceIds.push(deviceId)
         }
-        await this.saveProfile(profile)
+        await this.setProfile(profile)
         return profile
       }
     }
