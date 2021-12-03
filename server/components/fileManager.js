@@ -240,6 +240,20 @@ class FileManager {
     } catch (err) {}
     await fs.promises.mkdir(denoProjectPath) // Create project folder
 
+    // Add project to profile
+    let profile = await this.getProfile(writerUid)
+    if (!profile) {
+      return { error: `User ${writerUid} does not exist` }
+    }
+    if (!profile.projects) {
+      profile.projects = [] // Repair old format TODO REMOVE
+    }
+    if (profile.projects.length >= this.maxProjectsPerUser) {
+      return { error: `Sorry, you've reached your limit of ${this.maxProjectsPerUser} projects per user. You can delete other projects to free up space.` }
+    }
+    profile.projects.push(sanitizedProjectName)
+    await this.setProfile(profile)
+
     // Set info
     newInfo = {
       basedOn: newInfo.basedOn,
@@ -255,19 +269,7 @@ class FileManager {
     }
     await this.setInfo(sanitizedProjectName, newInfo, writerUid, true) // Override with new name in info.json
 
-    // Add project to profile
-    let profile = await this.getProfile(writerUid)
-    if (!profile) {
-      return { error: `User ${writerUid} does not exist` }
-    }
-    if (!profile.projects) {
-      profile.projects = [] // Repair old format TODO REMOVE
-    }
-    if (profile.projects.length >= this.maxProjectsPerUser) {
-      return { error: `Sorry, you've reached your limit of ${this.maxProjectsPerUser} projects per user. You can delete other projects to free up space.` }
-    }
-    profile.projects.push(sanitizedProjectName)
-    await this.setProfile(profile)
+
 
     // Set client and server
     let clientCode = await this.getClient(newInfo.basedOn)
