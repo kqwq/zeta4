@@ -267,7 +267,7 @@ class FileManager {
       return { error: `Sorry, you've reached your limit of ${this.maxProjectsPerUser} projects per user. You can delete other projects to free up space.` }
     }
     profile.projects.push(sanitizedProjectName)
-    await this.setProfile(writerUid, profile)
+    await this.setProfile(profile)
 
     // Set client and server
     let clientCode = await this.getClient(newInfo.basedOn)
