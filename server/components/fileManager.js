@@ -45,6 +45,7 @@ class FileManager {
     this.logs = "./storage/logs"
     this.profile = "./storage/profile"
     this.maxProjectsPerUser = process.env.MAX_PROJECTS_PER_USER || 5
+    this.minTimeBetweenProjectCreation = 1000 * 10 // 10 seconds is enough for anti-spam measures
     this.ipdb = "./storage/ipdb.json"
     this.globe = "./storage/globe.json"
     this.globeData = {}
@@ -238,21 +239,25 @@ class FileManager {
         return { error: `Project ${projectName} already exists` }
       }
     } catch (err) {}
-    await fs.promises.mkdir(denoProjectPath) // Create project folder
 
     // Add project to profile
     let profile = await this.getProfile(writerUid)
     if (!profile) {
       return { error: `User ${writerUid} does not exist` }
     }
-    if (!profile.projects) {
-      profile.projects = [] // Repair old format TODO REMOVE
-    }
     if (profile.projects.length >= this.maxProjectsPerUser) {
       return { error: `Sorry, you've reached your limit of ${this.maxProjectsPerUser} projects per user. You can delete other projects to free up space.` }
     }
+    let dateNow = new Date()
+    if (dateNow - new Date(profile.lastProjectCreated) < this.minTimeBetweenProjectCreation) {
+      return { error: `Sorry, you must wait ${this.minTimeBetweenProjectCreation / 1000} seconds between creating projects.` }
+    }
     profile.projects.push(sanitizedProjectName)
+    profile.lastProjectCreated = dateNow
     await this.setProfile(profile)
+
+    // Create project folder
+    await fs.promises.mkdir(denoProjectPath) 
 
     // Set info
     newInfo = {
@@ -297,9 +302,6 @@ class FileManager {
       if (!profile) {
         return { error: `User ${writerUid} does not exist` }
       }
-      if (!profile.projects) {
-        profile.projects = [] // Repair old format /// TODO REMOVE
-      }
       profile.projects = profile.projects.filter(x => x != projectName)
       await this.setProfile(profile)
     } else {
@@ -314,6 +316,7 @@ class FileManager {
     kaProfile.ipAddresses = [ipAddress]
     kaProfile.deviceIds = [deviceId]
     kaProfile.projects = []
+    kaProfile.lastProjectCreated = new Date()
     await this.setProfile(kaProfile)
     return uid
   }
