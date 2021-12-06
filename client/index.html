@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="utf-8">
-  <title>Client 4.4</title>
+  <title>Client 4.5 pre</title>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/simple-peer/9.11.0/simplepeer.min.js"></script>
@@ -16,8 +16,8 @@
   <script src="https://cdn.jsdelivr.net/npm/globe.gl@2.22.8/dist/globe.gl.min.js"></script>
 
   <!-- Ace cdn from jsDelivr -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js" type="text/javascript"
-    charset="utf-8"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.13/ext-language_tools.min.js"></script>
   <style>
     /* Scrollbar */
     ::-webkit-scrollbar {
@@ -962,13 +962,22 @@
       var editorServer
       function initEditors() {
         // HTML editor
+        let sharedSettings = {
+          theme: "ace/theme/tomorrow_night",
+          fontSize: "10pt",
+          enableBasicAutocompletion: true,
+          enableSnippets: true,
+          enableLiveAutocompletion: true,
+          displayIndentGuides: true,
+        }
         editorHtml = ace.edit("view-html");
-        editorHtml.setTheme("ace/theme/monokai-light");
+        editorHtml.setTheme("ace/theme/tomorrow_night");
+        editorHtml.setOptions(sharedSettings);
         editorHtml.session.setMode("ace/mode/html");
 
         // Server editor
         editorServer = ace.edit("view-server");
-        editorServer.setTheme("ace/theme/monokai");
+        editorServer.setOptions(sharedSettings);
         editorServer.session.setMode("ace/mode/javascript");
       }
       initEditors()
@@ -1119,7 +1128,7 @@
             }
             clearPoints()
             for (let gd of globeData) {
-              addPoint(gd.lat, gd.lng, statusColors[gd.status], gd.count)
+              addPoint(gd.lat, gd.lng, statusColors[gd.status||"offline"], gd.count)
               if (gd.status === "self") {
                 myGeo = { lat: gd.lat, lng: gd.lng }
               }

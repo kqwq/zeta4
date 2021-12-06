@@ -217,7 +217,6 @@ export default [
           lat: g.lat,
           lng: g.lng,
           count: g.count,
-          status: "offline",
         }
       })
       peers.filter(p => p.ipInfo?.loc).forEach(peerData => {
