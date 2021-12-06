@@ -358,7 +358,12 @@ class FileManager {
   async cacheGlobeData() {
     console.log("Caching globe data...");
     let res = await fs.promises.readFile(this.ipdb)
-    let data = JSON.parse(res)
+    let data;
+    try {
+      data = JSON.parse(res)
+    } catch (e) {
+      return console.log("Error parsing globe data:", e);
+    }
     let coords = data.filter(p => p.loc).map(p => {
       let [lat, lng] = p.loc.split(",").map(x => Math.round(parseFloat(x)))
       return lat + "," + lng
