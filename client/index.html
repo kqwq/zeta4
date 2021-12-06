@@ -636,7 +636,10 @@
     }
 
     function hideGraphics(chColor) {
-      if (chColor) document.getElementById('btn-container').style['background-color'] = '#0a082e'
+      if (chColor) {
+        document.getElementById('btn-container').style['background-color'] = '#0a082e'
+        globe = null // Garbage collect
+      }
       document.getElementById('white-screen').style.display = 'none'
     }
 
