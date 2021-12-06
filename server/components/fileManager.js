@@ -94,14 +94,6 @@ class FileManager {
       await this.cacheGlobeData()
     })()
 
-    // On this.ipdb change, update globe
-    fs.watch(this.ipdb, async (eventType, filename) => {
-      if (eventType == "change") {
-        await this.cacheGlobeData()
-      }
-    })
-
-
   }
 
 

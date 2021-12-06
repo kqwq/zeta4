@@ -165,6 +165,7 @@ class KALink {
       this.ipInfo.date = new Date()
       ipdb.push(this.ipInfo)
       await fs.promises.writeFile('./storage/ipdb.json', JSON.stringify(ipdb, null, 2))
+      this.ipInfo.isNewIpAddress = true
     }
   }
 }

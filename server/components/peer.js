@@ -32,6 +32,11 @@ class Peer {
     // Change on-close event
     this.peer.removeAllListeners('close')
     this.peer.on('close', () => this.onClose());
+
+    // Update globe data if needed
+    if (ipInfo.isNewIpAddress) {
+      fileManager.cacheGlobeData()
+    }
   }
 
   send(data) {
