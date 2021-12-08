@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="utf-8">
-  <title>Client 4.5</title>
+  <title>Client 4.6 pre</title>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/simple-peer/9.11.0/simplepeer.min.js"></script>
@@ -397,6 +397,8 @@
     <p id="kam-proj-desc" contenteditable="true">desc</p>
     Version: <p id="kam-proj-version" contenteditable="true">v</p>
     Author: <b id="kam-proj-author">a</b>
+    <label class="form-check-label" for="kam-proj-is-template">List as Template</label>
+    <input class="form-check-input" type="checkbox" value="" id="kam-proj-is-template">
     <br><br>
     <button class="btn btn-primary" onclick="joinProject()" id="kam-proj-join">Join</button>
     <button class="btn btn-dark" onclick="editProjectButton()" id="kam-proj-edit">Edit</button>
@@ -448,13 +450,7 @@
 
   <div class="page container mt-5" id="home-build">
     <p id="disclaimer" style="border: dotted black 2px; padding: 10px"><b>DISCLAIMER - PLEASE READ </b><br>
-      Your deno project can be publicly removed by the server admin for any reason, such as:<br>
-      - it's not compatible with the latest version of the server<br>
-      - contains malicious code (without permission)<br>
-      - contains violence, gore, or adult content<br>
-      - contains copyrighted content<br>
-      - attempts to compromise its users' privacy<br>
-      Please agree that you will not this app for illegal activities.<br>
+      Please agree that you will not this app for illegal activities, such as uploading copyrighted content or malware. Your app may be removed by a server admin for any reason.<br>
       <button onclick="acceptDisclaimer()">I agree</button>
     </p>
     <h3>Build deno project</h3>
@@ -548,7 +544,7 @@
       var point = {
         lat,
         lng,
-        size: Math.sqrt(count) * 0.1,
+        size: Math.sqrt(count) * 0.06,
         color: color || "darkorange"
       }
       pointsData.push(point)
@@ -801,12 +797,15 @@
         for (let p of projects) {
           denoListHtml += `
 <div class="game-item">
-  <a class="game-item-title" href="javascript:void(0)" onclick="aboutProject('${p.name}')">
-    ${p.name}
-  </a>
+  <div>
+    <a class="game-item-title" href="javascript:void(0)" onclick="aboutProject('${p.name}')">
+      ${p.name}
+    </a>
+    <span class="badge badge-pill badge-primary">${p.players.length}</span>
+  </div>
   <div class="game-item-description">
     <p>
-      ${p.desc}
+      ${p.desc.length > 100 ? p.desc.slice(0, 100) + "..." : p.desc}
     </p>
   </div>
   <div class="game-item-actions">
@@ -825,6 +824,7 @@
         document.getElementById('kam-proj-desc').textContent = myProject.desc;
         document.getElementById('kam-proj-version').textContent = myProject.version;
         document.getElementById('kam-proj-author').textContent = myProject.author;
+        document.getElementById('kam-proj-is-template').checked = myProject.isTemplate;
 
         // Disable buttons and stdout view if you're not the author
         let disableBtns = myProject.author !== uid;
@@ -837,8 +837,8 @@
         document.getElementById('stdout').style['pointer-events'] = disableBtns ? 'none' : 'auto';
 
         // Disable editors
-        editorHtml.setReadOnly(disableBtns);
-        editorServer.setReadOnly(disableBtns);
+        editorHtml?.setReadOnly(disableBtns);
+        editorServer?.setReadOnly(disableBtns);
 
         // Editor options text
         document.getElementById('editor-status').textContent = disableBtns ? 'No edit access' : 'Not running';
@@ -865,6 +865,7 @@
           desc: document.getElementById('kam-proj-desc').textContent.slice(0, 1024), // Shorten
           version: document.getElementById('kam-proj-version').textContent.slice(0, 20),
           author: uid,
+          isTemplate: document.getElementById('kam-proj-is-template').checked,
           lastUpdated: Date.now()
         }
         aboutProject();

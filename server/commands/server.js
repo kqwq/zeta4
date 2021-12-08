@@ -47,6 +47,19 @@ export default [
     }
   },
   {
+    name: "alert-all",
+    exec: (args, p, peers) => {
+      let [ password, message ] = args.split(/\s+/);
+      if (timingSafeEqual(process.env.GLOBAL_PASSWORD, password)) {
+        for (let peer of peers) {
+          peer.send("alert Message from server admin: " + message)
+        }
+      } else {
+        p.send("alert Wrong password")
+      }
+    }
+  },
+  {
     name: "is-eu",
     exec: (args, p) => {
       let euCountries = ['AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE']
@@ -58,11 +71,25 @@ export default [
       }
     }
   },
+  // {
+  //   name: "deno-get-projects",
+  //   exec: async (args, p, peers, rm, fm) => {
+  //     let allProjects = await fm.getAllInfo()
+  //     p.send("deno-set-projects " + JSON.stringify(allProjects))
+  //   }
+  // },
   {
     name: "deno-get-projects",
     exec: async (args, p, peers, rm, fm) => {
-      let allInfo = await fm.getAllInfo()
-      p.send("deno-set-projects " + JSON.stringify(allInfo))
+      let allProjects = await fm.getAllInfo()
+      for (let project of allProjects) {
+        project.players = []
+      }
+      let rooms = rm.repr().rooms
+      for (let room of rooms) {
+        allProjects.find(project => project.name === room.name).players.concat(room.players)
+      }
+      p.send("deno-set-projects " + JSON.stringify(allProjects))
     }
   },
   {
