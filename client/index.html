@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="utf-8">
-  <title>Client 4.6 pre</title>
+  <title>Client 4.6</title>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/simple-peer/9.11.0/simplepeer.min.js"></script>
@@ -396,14 +396,16 @@
     <h4 id="kam-proj-title">Project</h4>
     <p id="kam-proj-desc" contenteditable="true">desc</p>
     Version: <p id="kam-proj-version" contenteditable="true">v</p>
-    <label class="form-check-label" for="kam-proj-is-template">List as Template</label>
-    <input class="form-check-input" type="checkbox" value="" id="kam-proj-is-template">
-    <br>
+    <form>
+      <div class="form-group form-check">
+        <input class="form-check-input" type="checkbox" value="" id="kam-proj-is-template">
+        <label class="form-check-label" for="kam-proj-is-template">List as Template</label>
+      </div>
+    </form>
     Author: <b id="kam-proj-author">a</b>
-    <br>
+    <br><br>
     <button class="btn btn-primary" onclick="joinProject()" id="kam-proj-join">Join</button>
     <button class="btn btn-dark" onclick="editProjectButton()" id="kam-proj-edit">Edit</button>
-    <hr />
     <button class="btn btn-warning" onclick="updateProjectInfo()" id="kam-proj-save">Update info</button>
     <button class="btn btn-danger" onclick="deleteProject()" id="kam-proj-delete">Delete</button>
   </div>
@@ -791,7 +793,7 @@
       function populateProjects() {
         let denoListHtml = ""
         // Sort by view count
-        let getScore = (proj) => proj.views + (proj.author == uid) * 100000
+        let getScore = (proj) => proj.players.length * 100000 + Number(proj.author == uid) * 99999
         projects.sort((a, b) => {
           return getScore(b) - getScore(a)
         })
@@ -802,7 +804,7 @@
     <a class="game-item-title" href="javascript:void(0)" onclick="aboutProject('${p.name}')">
       ${p.name}
     </a>
-    <span class="badge badge-pill badge-primary">${p.players.length ? "" : p.players.length}</span>
+    <span class="badge badge-pill badge-primary">${p.players.length || ""}</span>
   </div>
   <div class="game-item-description">
     <p>

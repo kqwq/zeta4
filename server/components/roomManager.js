@@ -14,7 +14,7 @@ class Room {
     this.players = [];
     this.maxPlayers = maxPlayers || Infinity;
     this.denoProcess = null;
-    this.scriptOutput = ""; // The output of the script. Limit is 1,000,000 characters per minute (~133kb/s)
+    this.scriptOutput = ""; // The output of the script. Limit is 50,000 characters per 6 seconds
     this.addPlayers(players);
     this.lastActivity = Date.now();
   }
@@ -49,12 +49,12 @@ class Room {
   appendToScriptOutput(data) {
     let dateNow = Date.now()
     let timeSinceLastActivity = dateNow - this.lastActivity
-    if (timeSinceLastActivity > 60000) {
+    if (timeSinceLastActivity > 6000) {
       this.scriptOutput = ""
       this.lastActivity = dateNow
     }
     this.scriptOutput += data
-    if (this.scriptOutput.length > 100000) { // If program is spamming the terminal, shut it down
+    if (this.scriptOutput.length > 50000) { // If program is spamming the terminal, shut it down
       this.removeAllPlayers()
       this.sendToTerminal("\x1b[31mDeno process killed due to excessive output\x1B[0m")
     }
