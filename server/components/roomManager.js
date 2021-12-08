@@ -55,6 +55,9 @@ class Room {
     }
     this.scriptOutput += data
     if (this.scriptOutput.length > 50000) { // If program is spamming the terminal, shut it down
+      for (let peer of this.players) {
+        peer.send("alert Internal error: Deno process is spamming the terminal. Shutting down.")
+      }
       this.removeAllPlayers()
       this.sendToTerminal("\x1b[31mDeno process killed due to excessive output\x1B[0m")
     }
