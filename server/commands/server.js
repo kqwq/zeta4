@@ -93,8 +93,8 @@ export default [
       }
       let rooms = rm.repr().rooms
       for (let room of rooms) {
-        console.log("r", room)
         allProjects.find(project => project.name == room.name).players.push( ...room.players )
+        console.log("rr", allProjects.find(project => project.name == room.name).players)
       }
       p.send("deno-set-projects " + JSON.stringify(allProjects))
     }
