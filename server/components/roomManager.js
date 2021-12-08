@@ -15,11 +15,13 @@ class Room {
     this.maxPlayers = maxPlayers || Infinity;
     this.denoProcess = null;
     this.scriptOutput = ""; // The output of the script. Limit is 50,000 characters per 6 seconds
-    this.addPlayers(players);
     this.lastActivity = Date.now();
+    this.startServer()
+    this.addPlayers(players);
   }
 
   sendToDenoProcess(command, response) {
+    if (!this.denoProcess) return
     this.denoProcess.stdin.write("server " + JSON.stringify({ command, response }) + "\n");
   }
 
@@ -209,7 +211,6 @@ class RoomManager {
       }
     }
     let room = new Room(this, projectName, isMaintenance, players, maxPlayers)
-    room.startServer()
     this.rooms.push(room)
     return room
   }
