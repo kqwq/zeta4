@@ -19,6 +19,9 @@ function generatePassword() {
   return Array(8).fill().map(() => chars[Math.floor(Math.random() * chars.length)]).join('')
 }
 function authenticateAdmin(password) {
+  if (password.length - process.env.GLOBAL_PASSWORD.length !== 0) {
+    return false
+  }
   return timingSafeEqual(Buffer.from(password), Buffer.from(process.env.GLOBAL_PASSWORD))
 }
 
@@ -52,7 +55,7 @@ export default [
   {
     name: "alert-all",
     exec: (args, p, peers) => {
-      let [ password, message ] = args.split(/\s+/);
+      let [ password, message ] = args.split(/ (.+)/s)
       if (authenticateAdmin(password)) {
         for (let peer of peers) {
           peer.send("alert Message from server admin: " + message)
@@ -91,7 +94,7 @@ export default [
       let rooms = rm.repr().rooms
       for (let room of rooms) {
         console.log("r", room)
-        allProjects.find(project => project.name === room.name).players.concat(room.players)
+        allProjects.find(project => project.name == room.name).players.push( ...room.players )
       }
       p.send("deno-set-projects " + JSON.stringify(allProjects))
     }
