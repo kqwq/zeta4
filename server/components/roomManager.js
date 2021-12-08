@@ -19,6 +19,10 @@ class Room {
     this.lastActivity = Date.now();
   }
 
+  sendToDenoProcess(command, response) {
+    this.denoProcess.stdin.write("server " + JSON.stringify({ command, response }) + "\n");
+  }
+
   onDenoData(dataLines) {
     for (let data of dataLines.split("\n")) {
       if (data.length === 0) continue
@@ -66,7 +70,7 @@ class Room {
   sendToTerminal(message) {
     if (this.isMaintenance) {
       let firstPlayer = this.players?.[0]
-      if (firstPlayer && !firstPlayer.peer.destroyed) {
+      if (firstPlayer) {
         this.players[0]?.send("~" + message + "\n")
       }
     }
@@ -119,7 +123,8 @@ class Room {
   addPlayer(player) {
     player.room = this;
     this.players.push(player);
-    this.sendToTerminal(`\x1b[31m${player.uid} has joined the room\x1B[0m`)
+    this.sendToDenoProcess("player-join", player.uid);
+    ///this.sendToTerminal(`\x1b[31m${player.uid} has joined the room\x1B[0m`)
   }
 
   addPlayers(players) {
@@ -132,7 +137,8 @@ class Room {
     if (!player.peer.destroyed) {
       player.send("leave-room")
     }
-    this.sendToTerminal(`\x1b[31m${player.uid} left the room\x1B[0m`)
+    this.sendToDenoProcess("player-leave", player.uid);
+    ///this.sendToTerminal(`\x1b[31m${player.uid} left the room\x1B[0m`)
     player.room = null;
     this.players.splice(this.players.indexOf(player), 1);
     if (this.players.length === 0) {

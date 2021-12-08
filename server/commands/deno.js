@@ -14,12 +14,6 @@ import fs from "fs";
  * All commands are annomous, so you can't know who sent the command.
  */
 
-function sendToDenoProcess(room, command, response) {
-  room.denoProcess.stdin.write("server " + JSON.stringify({ command, response }) + "\n");
-}
-function clientToDeno(room, recipient, message) {
-  room.denoProcess.stdin.write(recipient + " " + message + "\n");
-}
 function sendToClient(recipientPeer, message) {
   recipientPeer.send(`^${message}`);
 }
@@ -40,13 +34,13 @@ export default [
   {
     name: 'room',
     exec: (args, room) => {
-      sendToDenoProcess(room, 'room', room.repr());
+      room.sendToDenoProcess('room', room.repr());
     }
   },
   {
     name: 'ping',
     exec: (args, room) => {
-      sendToDenoProcess(room, 'ping', "pong");
+      room.sendToDenoProcess('ping', "pong");
     }
   },
   {
@@ -104,7 +98,7 @@ export default [
         if (recipient) {
           sendToClient(recipient, message);
         } else {
-          sendToDenoProcess(room, 'send', `Could not find player with uid ${recipientUid}`);
+          room.sendToDenoProcess('send', `Could not find player with uid ${recipientUid}`);
         }
       }
     }
@@ -120,7 +114,7 @@ export default [
           fetch(url).then(res => {
             res.text().then(text => {
               // Send the text to the client
-              sendToDenoProcess(room, 'fetch', {
+              room.sendToDenoProcess('fetch', {
                 text: text,
                 url: url,
                 status: res.status,
@@ -143,7 +137,7 @@ export default [
       let files = [...clientFiles.map(f => `client/${f}`), ...serverFiles.map(f => `server/${f}`)];
 
       // Get the file names
-      sendToDenoProcess(room, 'get-howto-list', files);
+      room.sendToDenoProcess('get-howto-list', files);
     }
   },
   {
@@ -156,10 +150,10 @@ export default [
         try {
           code = await fs.promises.readFile(`./howto/${fileName}`, 'utf8');
         } catch (e) {
-          sendToDenoProcess(room, 'get-howto', `Could not find file ${fileName}`);
+          room.sendToDenoProcess('get-howto', `Could not find file ${fileName}`);
           return
         }
-        sendToDenoProcess(room, 'get-howto', {
+        room.sendToDenoProcess('get-howto', {
           fileName: fileName,
           code: code
         });
