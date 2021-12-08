@@ -396,10 +396,11 @@
     <h4 id="kam-proj-title">Project</h4>
     <p id="kam-proj-desc" contenteditable="true">desc</p>
     Version: <p id="kam-proj-version" contenteditable="true">v</p>
-    Author: <b id="kam-proj-author">a</b>
     <label class="form-check-label" for="kam-proj-is-template">List as Template</label>
     <input class="form-check-input" type="checkbox" value="" id="kam-proj-is-template">
-    <br><br>
+    <br>
+    Author: <b id="kam-proj-author">a</b>
+    <br>
     <button class="btn btn-primary" onclick="joinProject()" id="kam-proj-join">Join</button>
     <button class="btn btn-dark" onclick="editProjectButton()" id="kam-proj-edit">Edit</button>
     <hr />
@@ -801,11 +802,11 @@
     <a class="game-item-title" href="javascript:void(0)" onclick="aboutProject('${p.name}')">
       ${p.name}
     </a>
-    <span class="badge badge-pill badge-primary">${p.players.length}</span>
+    <span class="badge badge-pill badge-primary">${p.players.length ? "" : p.players.length}</span>
   </div>
   <div class="game-item-description">
     <p>
-      ${p.desc.length > 100 ? p.desc.slice(0, 100) + "..." : p.desc}
+      ${p.desc.length > 100 ? p.desc.slice(0, 90) + "..." : p.desc}
     </p>
   </div>
   <div class="game-item-actions">

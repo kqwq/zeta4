@@ -42,7 +42,7 @@ export default [
           process.exit(0)
         }, 1000)
       } else {
-        p.send("shutdown - Wrong password")
+        p.send("alert Wrong password")
       }
     }
   },
@@ -50,6 +50,7 @@ export default [
     name: "alert-all",
     exec: (args, p, peers) => {
       let [ password, message ] = args.split(/\s+/);
+      console.log(password, process.env.GLOBAL_PASSWORD)
       if (timingSafeEqual(process.env.GLOBAL_PASSWORD, password)) {
         for (let peer of peers) {
           peer.send("alert Message from server admin: " + message)
@@ -87,6 +88,7 @@ export default [
       }
       let rooms = rm.repr().rooms
       for (let room of rooms) {
+        console.log("r", room)
         allProjects.find(project => project.name === room.name).players.concat(room.players)
       }
       p.send("deno-set-projects " + JSON.stringify(allProjects))
