@@ -40,6 +40,7 @@ class Peer {
   }
 
   send(data) {
+    if (this.peer.destroyed) return
     this.peer.send(data);
   }
 
