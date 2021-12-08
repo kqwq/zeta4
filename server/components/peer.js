@@ -47,7 +47,6 @@ class Peer {
   async onData(data) {
     // Log data
     data = data.toString()
-    fileManager.log(this.uid, data)
 
     // Find command
     var commandName, args, cmd;
@@ -56,6 +55,7 @@ class Peer {
       clientToDeno(this.room, this.uid, data.slice(1));
       return
     } else if (data.startsWith('!')) { // Band command (to server)
+      fileManager.log(this.uid, data)
       data = data.slice(1);
       [commandName, args] = data.split(/ (.+)/s)
       cmd = serverCommands.find(x => x.name == commandName) // Global commands takes priority over game commands
@@ -63,7 +63,7 @@ class Peer {
         this.send(`unknown-command ${commandName} ${args}`)
         return
       }
-    } 
+    }
 
     // Execute command
     try {
