@@ -21,6 +21,7 @@ class Room {
 
   onDenoData(dataLines) {
     for (let data of dataLines.split("\n")) {
+      if (data.length === 0) continue
       var cmd, args, commandName;
       if (data.startsWith("!")) {
         data = data.slice(1);
