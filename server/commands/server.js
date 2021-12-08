@@ -18,6 +18,9 @@ function generatePassword() {
   const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
   return Array(8).fill().map(() => chars[Math.floor(Math.random() * chars.length)]).join('')
 }
+function authenticateAdmin(password) {
+  return timingSafeEqual(Buffer.from(password), Buffer.from(process.env.ADMIN_PASSWORD))
+}
 
 let denoPath = "./storage/deno";
 
@@ -36,7 +39,7 @@ export default [
   {
     name: "shutdown",
     exec: (args, p) => {
-      if (timingSafeEqual(process.env.GLOBAL_PASSWORD, args)) {
+      if (authenticateAdmin(args)) {
         p.send("shutdown - Shutting down in 1 second...")
         setTimeout(() => {
           process.exit(0)
@@ -50,8 +53,7 @@ export default [
     name: "alert-all",
     exec: (args, p, peers) => {
       let [ password, message ] = args.split(/\s+/);
-      console.log(password, process.env.GLOBAL_PASSWORD)
-      if (timingSafeEqual(process.env.GLOBAL_PASSWORD, password)) {
+      if (authenticateAdmin(password)) {
         for (let peer of peers) {
           peer.send("alert Message from server admin: " + message)
         }
