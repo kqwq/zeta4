@@ -14,34 +14,35 @@ class Room {
     this.players = [];
     this.maxPlayers = maxPlayers || Infinity;
     this.denoProcess = null;
-    this.scriptOutput = ""; // The output of the script. Limit is 100,000 characters per minute (~13.3kb/s)
+    this.scriptOutput = ""; // The output of the script. Limit is 1,000,000 characters per minute (~133kb/s)
     this.addPlayers(players);
     this.lastActivity = Date.now();
   }
 
-  onDenoData(data) {
-    var cmd, args, commandName;
-    if (data.startsWith("!")) {
-      data = data.slice(1);
-      [ commandName, args ] = data.split(/ (.+)/s)
-      commandName = commandName.replace(/\n/g, '')
-      args = args || "";
-      cmd = denoCommands.find(x => x.name == commandName)
-    } else {
-      args = data
-      cmd = denoCommands.find(x => x.name == "*")
-    }
-    if (cmd) {
-      try {
-        cmd.exec(args, this) // args, room
-      } catch (e) {
-        this.sendToTerminal(`There was an error executing the command: ${commandName}`)
-        this.sendToTerminal(e)
+  onDenoData(dataLines) {
+    for (let data of dataLines.split("\n")) {
+      var cmd, args, commandName;
+      if (data.startsWith("!")) {
+        data = data.slice(1);
+        [ commandName, args ] = data.split(/ (.+)/s)
+        commandName = commandName.replace(/\n/g, '')
+        args = args || "";
+        cmd = denoCommands.find(x => x.name == commandName)
+      } else {
+        args = data
+        cmd = denoCommands.find(x => x.name == "*")
       }
-    } else {
-      this.sendToTerminal("\x1b[31mUnknown command: " + commandName + "\x1B[0m")
+      if (cmd) {
+        try {
+          cmd.exec(args, this) // args, room
+        } catch (e) {
+          this.sendToTerminal(`There was an error executing the command: ${commandName}`)
+          this.sendToTerminal(e)
+        }
+      } else {
+        this.sendToTerminal("\x1b[31mUnknown command: " + commandName + "\x1B[0m")
+      }
     }
-
   }
 
   appendToScriptOutput(data) {
@@ -52,7 +53,7 @@ class Room {
       this.lastActivity = dateNow
     }
     this.scriptOutput += data
-    if (this.scriptOutput.length > 10000) { // If program is spamming the terminal, shut it down
+    if (this.scriptOutput.length > 100000) { // If program is spamming the terminal, shut it down
       this.removeAllPlayers()
       this.sendToTerminal("\x1b[31mDeno process killed due to excessive output\x1B[0m")
     }

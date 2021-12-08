@@ -15,9 +15,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/globe.gl@2.22.8/dist/globe.gl.min.js"></script>
 
-  <!-- Ace cdn from jsDelivr -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.13/ext-language_tools.min.js"></script>
+
   <style>
     /* Scrollbar */
     ::-webkit-scrollbar {
@@ -401,7 +399,7 @@
     Author: <b id="kam-proj-author">a</b>
     <br><br>
     <button class="btn btn-primary" onclick="joinProject()" id="kam-proj-join">Join</button>
-    <button class="btn btn-dark" onclick="editProject()" id="kam-proj-edit">Edit</button>
+    <button class="btn btn-dark" onclick="editProjectButton()" id="kam-proj-edit">Edit</button>
     <hr />
     <button class="btn btn-warning" onclick="updateProjectInfo()" id="kam-proj-save">Update info</button>
     <button class="btn btn-danger" onclick="deleteProject()" id="kam-proj-delete">Delete</button>
@@ -813,7 +811,7 @@
   </div>
   <div class="game-item-actions">
     <a href="javascript:void(0)" class="btn btn-primary" onclick="joinProject('${p.name}')">Join</a>
-    <a href="javascript:void(0)" class="btn btn-${p.author === uid ? "dark" : "secondary"}" onclick="editProject('${p.name}')">${p.author === uid ? "Edit" : "View"}</a>
+    <a href="javascript:void(0)" class="btn btn-${p.author === uid ? "dark" : "secondary"}" onclick="editProjectButton('${p.name}')">${p.author === uid ? "Edit" : "View"}</a>
   </div>
 </div>
       `
@@ -871,6 +869,23 @@
         }
         aboutProject();
         send("!deno-update-info " + JSON.stringify(myProject))
+      }
+      function editProjectButton(projName) {
+        if (window.ace) {
+          editProject()
+        } else {
+          console.log("Importing ace editor")
+          importAceEditor()
+          setTimeout(() => {
+            if (ace) {
+              initEditors()
+              editProject(projName)
+              console.log("Imported ace editor")
+            } else {
+              console.log("Failed to import ace editor")
+            }
+           }, 1000)
+        }
       }
       function editProject(projName) {
         myProject = projName ? projects.find(p => p.name == projName) : myProject;
@@ -980,7 +995,16 @@
         editorServer.setOptions(sharedSettings);
         editorServer.session.setMode("ace/mode/javascript");
       }
-      initEditors()
+
+      function importAceEditor() {
+        let element = document.createElement('script');
+        element.src = 'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js';
+        document.body.appendChild(element);
+
+        element = document.createElement('script');
+        element.href = 'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.13/ext-language_tools.min.js';
+        document.body.appendChild(element);
+      }
 
       // Page setup
       var page = "home"
