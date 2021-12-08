@@ -19,6 +19,7 @@ function generatePassword() {
   return Array(8).fill().map(() => chars[Math.floor(Math.random() * chars.length)]).join('')
 }
 function authenticateAdmin(password) {
+  console.log("debug: authenticateAdmin")
   console.log("password: ", password)
   return timingSafeEqual(Buffer.from(password), Buffer.from(process.env.ADMIN_PASSWORD))
 }
