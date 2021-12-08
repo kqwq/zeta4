@@ -19,10 +19,7 @@ function generatePassword() {
   return Array(8).fill().map(() => chars[Math.floor(Math.random() * chars.length)]).join('')
 }
 function authenticateAdmin(password) {
-  console.log("debug: authenticateAdmin")
-  console.log("password: ", password, " adminPassword: ", process.env.ADMIN_PASSWORD)
-  console.log(Buffer.from(password, 'base64'))
-  return timingSafeEqual(Buffer.from(password, 'base64'), Buffer.from(process.env.ADMIN_PASSWORD, 'base64'))
+  return timingSafeEqual(Buffer.from(password), Buffer.from(process.env.GLOBAL_PASSWORD))
 }
 
 let denoPath = "./storage/deno";
