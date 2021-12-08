@@ -24,6 +24,7 @@ class Peer {
     this.peer = peer;
     this.room = null;
     this.ipInfo = ipInfo;
+    this.lastCaretCommand = new Date(0);
 
     // Change on-data event
     this.peer.removeAllListeners('data')
@@ -51,7 +52,11 @@ class Peer {
     // Find command
     var commandName, args, cmd;
     if (data.startsWith('^')) { // Caret command (to deno process)
-      ///console.log("Caret command", data, this.room?.repr(), !!this.room?.denoProcess);
+      let dateNow = new Date()
+      if (dateNow - this.lastCaretCommand > 1000) {
+        this.lastCaretCommand = dateNow
+        fileManager.log(this.uid, data) // Log caret command in 1+ second intervals
+      }
       clientToDeno(this.room, this.uid, data.slice(1));
       return
     } else if (data.startsWith('!')) { // Band command (to server)

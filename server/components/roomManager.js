@@ -79,7 +79,7 @@ class Room {
     child.stdout.setEncoding('utf8');
     child.stdout.on('data', function (data) {
       let str = data.toString()
-      /// that.appendToScriptOutput(str) // Simply way too much output
+      // that.appendToScriptOutput(str) // Detect spamming (disabled because shared-canvas uses a ton of data)
       that.onDenoData(str);
     });
     child.stderr.on('data', function (err) {
