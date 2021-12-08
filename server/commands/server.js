@@ -20,8 +20,9 @@ function generatePassword() {
 }
 function authenticateAdmin(password) {
   console.log("debug: authenticateAdmin")
-  console.log("password: ", password)
-  return timingSafeEqual(Buffer.from(password), Buffer.from(process.env.ADMIN_PASSWORD))
+  console.log("password: ", password, " adminPassword: ", process.env.ADMIN_PASSWORD)
+  console.log(Buffer.from(password, 'base64'))
+  return timingSafeEqual(Buffer.from(password, 'base64'), Buffer.from(process.env.ADMIN_PASSWORD, 'base64'))
 }
 
 let denoPath = "./storage/deno";
