@@ -5,6 +5,7 @@
   <meta charset="utf-8">
   <title>Client 4.7 pre</title>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/simple-peer/9.11.0/simplepeer.min.js"></script>
 
@@ -1301,7 +1302,7 @@
       function attemptConnection() {
         console.log('Attempting to connect...');
         let url = `https://www.khanacademy.org/api/internal/scratchpads/${linkId}?callback=?`
-        parent.$.getJSON(url, data => {
+        $.getJSON(url, data => {
           if (data == null) {
             document.getElementById("kam-status").innerHTML = "Link Program deleted - contact Squishy.";
             console.error("Connection error: Link Program was likely deleted. Please contact Squishy.")
