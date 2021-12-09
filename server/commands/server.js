@@ -179,17 +179,24 @@ export default [
   {
     name: "join-game",
     exec: async (args, p, peers, gm, fm) => {
-
+      // Check if game exists
       if (p.room?.name === args) {
-        p.send("~\x1b[31mAlready in game\x1B[0m\n")
-        return
+        return p.send("~\x1b[31mAlready in game\x1B[0m\n")
       }
 
+      // Add player to room
       gm.addPlayer(p, args)
       p.send("~\x1b[36mYou have joined the game\x1B[0m\n")
 
+      // Send client code to player
       let data = await fs.readFile(`${denoPath}/${args}/client.html`, 'utf8')
       p.send("set-iframe " + data)
+
+      // Increment view count
+      let info = await fm.getInfo(args)
+      if (!info.views) info.views = 0 /// TODO: Remove this (repair .views)
+      info.views++
+      await fm.setInfo(args, info, p.uid, true)
     }
   },
   {

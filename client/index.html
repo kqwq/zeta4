@@ -913,7 +913,6 @@
       }
 
       function runServerCode() {
-        chView('stdout');
         editorStatusCountup = 0;
         let serverCode = editorServer.getSession().getValue();
         let obj = {
@@ -1074,14 +1073,14 @@
           console.log("%c" + data, 'background: #000; color: #00ff00')
           // Send message to terminal if it is open
           if (page === "home-games-project-edit") {
-            term.write((data.slice(1)).replace(/\x07/g, "\x1b[31m[DEBUG]\x1b[0m ").replace(/\n/g, "\r\n"))
+            term.write(data.slice(1).replace(/\x07/g, "\x1b[31m[DEBUG]\x1b[0m ").replace(/\n/g, "\r\n"))
           }
           return
         }
         if (data.startsWith("^")) {
           // Send message to terminal if it is open
           if (page == "home-games-project-edit") {
-            term.write(data.replace(/\n/g, "\r\n"))
+            term.write(data.replace(/\n/g, "\r\n") + "\r\n")
           }
 
           // Also send message to iframe
@@ -1104,7 +1103,7 @@
           if (page === "home-games-project-edit") {
             editorStatusCountup = -1;
             let statusCode = secondArg
-            document.getElementById("editor-status").textContent = statusCode ? "Error" : "Success"
+            document.getElementById("editor-status").textContent = `Exit code ${statusCode}`
           } else if (page === "home-games-project-join") {
             iframe.srcdoc = "";
             leaveProject()
