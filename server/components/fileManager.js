@@ -49,7 +49,7 @@ class FileManager {
     this.ipdb = "./storage/ipdb.json"
     this.globe = "./storage/globe.json"
     this.globeData = {}
-    this.logLengthLimit = 100;
+    this.logLengthLimit = 400;
     this.projectInfoCache = []
     this.defaultClient =
       this.starterClientHtmlCode = (projName) => `<!DOCTYPE html>
