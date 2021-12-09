@@ -168,6 +168,10 @@ class KALink {
       this.ipInfo.isNewIpAddress = true
     }
   }
+
+  removeSelfFromLinks() {
+    links.splice(links.indexOf(this), 1)
+  }
 }
 
 // Manages the TURN server
