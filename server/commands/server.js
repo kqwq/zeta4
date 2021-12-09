@@ -105,6 +105,7 @@ export default [
       if (response.success) {
         p.send("deno-set-server " + response.server)
         p.send("deno-set-client " + response.client)
+        response.info.players = []
         p.send("deno-add-project " + JSON.stringify(response.info))
       } else {
         p.send("alert " + response.error)

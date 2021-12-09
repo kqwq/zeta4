@@ -787,8 +787,17 @@
       var projectServerCode = ""
       var projectClientCode = ""
       function getProjects() {
+        // Wipe build page templates
+        document.querySelector('#build-refresh').disabled = true;
+        let templateBasic = document.querySelector('#template-basic');
+        let templateCommunity = document.querySelector('#template-community');
+        templateBasic.innerHTML = '';
+        templateCommunity.innerHTML = ''
+        
+        document.getElementById('game-list').innerHTML = '<div>Loading<span class="loading"></span></div>' // Game page loading
+        
+        // Send request
         send("!deno-get-projects")
-        document.getElementById('game-list').innerHTML = '<div>Loading<span class="loading"></span></div>'
       }
       function populateProjects() {
         let denoListHtml = ""
@@ -869,7 +878,8 @@
           version: document.getElementById('kam-proj-version').textContent.slice(0, 20),
           author: uid,
           isTemplate: document.getElementById('kam-proj-is-template').checked,
-          lastUpdated: Date.now()
+          lastUpdated: Date.now(),
+          players: []
         }
         aboutProject();
         send("!deno-update-info " + JSON.stringify(myProject))
@@ -1418,14 +1428,6 @@
           onTemplateSelect(name);
         });
       });
-    }
-    function refreshTemplateOptions() {
-      document.querySelector('#build-refresh').disabled = true;
-      let templateBasic = document.querySelector('#template-basic');
-      let templateCommunity = document.querySelector('#template-community');
-      templateBasic.innerHTML = '';
-      templateCommunity.innerHTML = '';
-      send("!deno-get-projects")
     }
     function buildProjectFromTemplate() {
       let projBasedOn = document.querySelector('#build-title').innerHTML;
