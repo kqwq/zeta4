@@ -831,7 +831,7 @@
       }
       function updateMaxPlayers() {
         let val = $("#build-max-players")[0].value
-        if (val === 21) val = 100
+        if (val == 21) val = 100
         $("#max-players")[0].textContent = val
       }
       function aboutProject(projName) {
@@ -842,7 +842,7 @@
         $("#kam-proj-version")[0].textContent = myProject.version;
         $("#kam-proj-author")[0].textContent = myProject.author;
         $("#kam-proj-is-template")[0].checked = myProject.isTemplate;
-        $("#kam-proj-max-players")[0].textContent = myProject.maxPlayers || 8;
+        $("#kam-proj-max-players")[0].textContent = myProject.maxPlayers || 100;
 
         // Disable buttons and stdout view if you're not the author
         let disableBtns = myProject.author !== uid;

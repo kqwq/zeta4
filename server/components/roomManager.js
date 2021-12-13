@@ -13,7 +13,7 @@ class Room {
     this.name = name;
     this.isMaintenance = isMaintenance || false;
     this.players = [];
-    this.maxPlayers = maxPlayers || Infinity;
+    this.maxPlayers = maxPlayers || 100;
     this.denoProcess = null;
     this.scriptOutput = ""; // The output of the script. Limit is 50,000 characters per 6 seconds
     this.lastActivity = Date.now();

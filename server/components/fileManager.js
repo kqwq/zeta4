@@ -207,6 +207,7 @@ class FileManager {
       created: new Date().toISOString(),
       views: 0,
       ratings: [0, 0, 0, 0, 0],
+      maxPlayers: 10,
     }
     let clientCode = this.defaultClient("default")
     let serverCode = this.defaultServer("default")
@@ -252,6 +253,8 @@ class FileManager {
     await fs.promises.mkdir(denoProjectPath) 
 
     // Set info
+    let maxPlayers = parseInt(newInfo.maxPlayers) || 100 
+    maxPlayers = Math.min(100, Math.max(2, maxPlayers)) // Clamp to 2-100
     newInfo = {
       basedOn: newInfo.basedOn,
       name: sanitizedProjectName,
@@ -263,7 +266,7 @@ class FileManager {
       created: new Date().toISOString(),
       views: 0,
       ratings: [0, 0, 0, 0, 0],
-      maxPlayers: newInfo.maxPlayers || 8
+      maxPlayers: maxPlayers
     }
     await this.setInfo(sanitizedProjectName, newInfo, writerUid, true) // Override with new name in info.json
 
