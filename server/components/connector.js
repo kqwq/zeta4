@@ -26,8 +26,6 @@ class KALinkProgram {
   }
 
   queueLink(link) {
-    links.push(link)
-
     if (!this.isUpdateScheduled) { // If there is no update scheduled, schedule one
       this.isUpdateScheduled = true
       let remainingTime = this.minUpdateInterval - (new Date() - this.lastUpdated)
