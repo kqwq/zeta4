@@ -404,17 +404,18 @@ Questions? Please reach out to kqwq#2348 on Discord or @squishypill on Twitter.
 
   <div class="container page mt-5" id="home-games-project">
     <h4 id="kam-proj-title">Project</h4>
-    <p id="kam-proj-desc" contenteditable="true">desc</p>
-    Version: <p id="kam-proj-version" contenteditable="true">v</p>
+    <p id="kam-proj-desc" contenteditable="true">-</p>
+    Version: <p id="kam-proj-version" contenteditable="true">-</p>
     <form>
       <div class="form-group form-check">
         <input class="form-check-input" type="checkbox" value="" id="kam-proj-is-template">
         <label class="form-check-label" for="kam-proj-is-template">List as Template</label>
       </div>
     </form>
-    Max players (2-100): <p id="kam-proj-max-players" contenteditable="true">max-players</p>
+    Max players (2-100): <p id="kam-proj-max-players" contenteditable="true">-</p>
 
-    Author: <b id="kam-proj-author">a</b>
+    Author: <b id="kam-proj-author">-</b>
+    Views: <b id="kam-proj-views">-</b>
     <br><br>
     <button class="btn btn-primary" onclick="joinProject()" id="kam-proj-join">Join</button>
     <button class="btn btn-dark" onclick="editProjectButton()" id="kam-proj-edit">Edit</button>
@@ -863,6 +864,7 @@ Questions? Please reach out to kqwq#2348 on Discord or @squishypill on Twitter.
         $("#kam-proj-desc")[0].textContent = myProject.desc;
         $("#kam-proj-version")[0].textContent = myProject.version;
         $("#kam-proj-author")[0].textContent = myProject.author;
+        $("#kam-proj-views")[0].textContent = myProject.views;
         $("#kam-proj-is-template")[0].checked = myProject.isTemplate;
         $("#kam-proj-max-players")[0].textContent = myProject.maxPlayers || 100;
 
