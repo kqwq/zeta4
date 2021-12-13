@@ -107,7 +107,7 @@ class KALink {
   }
 
   killSelf() {
-    let self = links.find(x === this)
+    let self = links.find(x => x === this)
     console.log("Before: " + links.length)
     links.splice(links.indexOf(self), 1)
     console.log("After: " + links.length)
