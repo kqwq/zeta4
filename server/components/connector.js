@@ -124,7 +124,7 @@ class KALink {
       this.answer = answer
       linkProgram.queueLink(this)
     }).on('connect', () => {
-      this.removeSelfFromLinks()
+      this.killSelf()
       this.turnServer.connectAsPeer(this)
     }).on('close', () => {
       this.killSelf()
@@ -168,10 +168,6 @@ class KALink {
       await fs.promises.writeFile('./storage/ipdb.json', JSON.stringify(ipdb, null, 2))
       this.ipInfo.isNewIpAddress = true
     }
-  }
-
-  removeSelfFromLinks() {
-    links.splice(links.indexOf(this), 1)
   }
 }
 
