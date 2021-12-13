@@ -204,7 +204,7 @@ class FileManager {
       isTemplate: true,
       isBasicTemplate: true,
       basedOn: null,
-      created: new Date().toISOString(),
+      created: new Date(),
       views: 0,
       ratings: [0, 0, 0, 0, 0],
       maxPlayers: 10,
@@ -250,22 +250,25 @@ class FileManager {
     await this.setProfile(profile)
 
     // Create project folder
-    await fs.promises.mkdir(denoProjectPath) 
+    await fs.promises.mkdir(denoProjectPath)
+
+    // Get old info
+    let oldInfo = await this.getInfo(projectName)
 
     // Set info
     let maxPlayers = parseInt(newInfo.maxPlayers) || 100 
     maxPlayers = Math.min(100, Math.max(2, maxPlayers)) // Clamp to 2-100
     newInfo = {
-      basedOn: newInfo.basedOn,
+      basedOn: oldInfo.basedOn,
       name: sanitizedProjectName,
       desc: trimTo(newInfo.desc, 140),
       version: trimTo(newInfo.version, 30),
       author: writerUid,
       isTemplate: newInfo.isTemplate,
       isBasicTemplate: false,
-      created: new Date().toISOString(),
-      views: 0,
-      ratings: [0, 0, 0, 0, 0],
+      created: oldInfo.created || new Date(),
+      views: oldInfo.views || 0,
+      ratings: oldInfo.ratings || [0, 0, 0, 0, 0],
       maxPlayers: maxPlayers
     }
     await this.setInfo(sanitizedProjectName, newInfo, writerUid, true) // Override with new name in info.json
