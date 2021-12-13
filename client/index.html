@@ -908,7 +908,7 @@ Questions? Please reach out to kqwq#2348 on Discord or @squishypill on Twitter.
           isTemplate: $("#kam-proj-is-template")[0].checked,
           lastUpdated: Date.now(),
           players: [],
-          maxPlayers: $("#kam-proj-max-players")[0].value,
+          maxPlayers: $("#kam-proj-max-players")[0].textContent,
         }
         aboutProject();
         send("!deno-update-info " + JSON.stringify(myProject))
