@@ -326,7 +326,7 @@ Questions? Please reach out to kqwq#2348 on Discord or @squishypill on Twitter.
     <div class="col md-12">
       <div class="float-left">
         <span id="kam-status">Connecting<span class="loading"></span></span>
-        <span id="kam-breadcrumbs"> | Games > test > Editing server.js</span>
+        <span id="kam-breadcrumbs">-</span>
       </div>
       <div class="float-right">
         <span id="kam-views">
@@ -396,7 +396,7 @@ Questions? Please reach out to kqwq#2348 on Discord or @squishypill on Twitter.
   <div class="container page mt-5" id="home-games">
     <div class="d-flex justify-content-center">
       <input autocomplete="off" id="games-search" placeholder="Search games" onkeyup="searchGames()" class="form-control col-4">
-      <button onclick="getProjects()" class="btn btn-success btn-sm">Refresh</button>
+      <button onclick="getProjects()" class="btn btn-light btn-sm">Refresh</button>
     </div>
     <hr/>
     <div id="game-list"> </div>
@@ -1326,8 +1326,10 @@ Questions? Please reach out to kqwq#2348 on Discord or @squishypill on Twitter.
         }
       }
 
+      let connectionAttemptsMax = 6
       let connectionAttempts = 0
       function attemptConnection() {
+        $("#kam-status")[0].textContent = `Connecting (${connectionAttempts}/${connectionAttemptsMax})`
         console.log('Attempting to connect...');
         let url = `https://www.khanacademy.org/api/internal/scratchpads/${linkId}?callback=?`
         $.getJSON(url, data => {
@@ -1348,7 +1350,7 @@ Questions? Please reach out to kqwq#2348 on Discord or @squishypill on Twitter.
           let serverOffer = linkProgramCode[answerLineNumber - 1]
           if (!serverOffer || !serverOffer.includes('answer=')) {
             connectionAttempts++
-            if (connectionAttempts > 6) {
+            if (connectionAttempts > connectionAttemptsMax) {
               $("#kam-status")[0].textContent = "Server offline - contact Squishy."
               console.error("Connection error: Link Program is unresponsive. Please contact Squishy.")
               return
