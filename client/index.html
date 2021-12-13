@@ -1,22 +1,29 @@
 <!DOCTYPE html>
+<!--
+
+3 Ways to Access the KA Metaverse
+
+1. [KHAN ACADEMY] https://www.khanacademy.org/computer-programming/new-webpage/5126673513103360?editor=no&width=960&height=540
+
+2. [NEW WEBPAGE] https://kqwq.me/metaverse
+
+3. [FULLSCREEN] https://kqwq.me/zeta4/client/
+
+Questions? Please reach out to kqwq#2348 on Discord or @squishypill on Twitter.
+
+-->
 <html>
 
 <head>
   <meta charset="utf-8">
-  <title>Client 4.7 pre</title>
+  <title>Client 4.8</title>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-
   <script src="https://cdnjs.cloudflare.com/ajax/libs/simple-peer/9.11.0/simplepeer.min.js"></script>
-
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.5.0/lib/xterm-addon-fit.min.js"></script>
-
-
   <script src="https://cdn.jsdelivr.net/npm/globe.gl@2.22.8/dist/globe.gl.min.js"></script>
-
-
   <style>
     /* Scrollbar */
     ::-webkit-scrollbar {
@@ -309,7 +316,7 @@
       font-size: 16px;
       font-weight: bold;
       color: #0A2A66;
-    margin-bottom: 0;
+      margin-bottom: 0;
     }
   </style>
 </head>
@@ -389,7 +396,11 @@
 
   <div class="container page mt-5" id="home-games">
     <h3>Games</h3>
-    <button onclick="getProjects()" class="btn btn-success btn-sm">Refresh</button>
+    <div class="row">
+      <button onclick="getProjects()" class="btn btn-success btn-sm">Refresh</button>
+      <input autocomplete="off" id="games-search" placeholder="Search games" onkeyup="searchGames()"
+        class="form-control col-8">
+    </div>
     <div id="game-list"> </div>
   </div>
 
@@ -455,24 +466,21 @@
   </div>
 
   <div class="page container mt-5" id="home-build">
-    <p id="disclaimer" style="border: dotted black 2px; padding: 10px"><b>DISCLAIMER - PLEASE READ </b><br>
-      Please agree that you will not this app for illegal activities, such as uploading copyrighted content or malware. Your app may be removed by a server admin for any reason.<br>
-      <button onclick="acceptDisclaimer()">I agree</button>
-    </p>
     <h3>Build deno project</h3>
     <div class="row">
-      
+
       <div class="col-md-12">
         <p>Jumpstart your progress by starting from a template. Full explanation and code docs are given in the
           <b>default</b> template.
         </p>
         <div class="dropdown">
-          <button class="btn btn-secondary dropdown-toggle" id="build-dropdown-toggle" type="button" id="triggerId" data-bs-toggle="dropdown"
-            aria-haspopup="true" aria-expanded="false">
+          <button class="btn btn-secondary dropdown-toggle" id="build-dropdown-toggle" type="button" id="triggerId"
+            data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             Choose template
           </button>
           <button id="build-refresh" class="btn btn-success" onclick="refreshTemplateOptions()">Refresh</button>
-          <div id="build-dropdown-menu" class="dropdown-menu" aria-labelledby="triggerId" style="height: 300px; overflow-y: scroll;">
+          <div id="build-dropdown-menu" class="dropdown-menu" aria-labelledby="triggerId"
+            style="height: 300px; overflow-y: scroll;">
             <h6 class="dropdown-header">Start here</h6>
             <a class="dropdown-item" href="javascript:void(0)">default</a>
             <div class="dropdown-divider"></div>
@@ -507,11 +515,16 @@
         <label class="form-check-label" for="build-is-template">List as Template</label>
       </div>
       <div class="form-group col-12">
-        <input type="range" class="custom-range" id="build-max-players" min="2" max="21" value="8" onchange="updateMaxPlayers()">
+        <input type="range" class="custom-range" id="build-max-players" min="2" max="21" value="8"
+          onchange="updateMaxPlayers()">
         <label for="build-max-players">Max players - <span id="max-players">8</span></label>
       </div>
-
     </form>
+    <p id="disclaimer" style="border: dotted black 2px; padding: 10px"><b>DISCLAIMER - PLEASE READ </b><br>
+      Please agree that you will not this app for illegal activities, such as uploading copyrighted content or malware.
+      Your app may be removed by a server admin for any reason.<br>
+      <button onclick="acceptDisclaimer()">I agree</button>
+    </p>
     <div class="mb-3">
       <button id="build-back" class="btn btn-dark" onclick="chPage('home')">Back</button>
       <button id="build-create" class="btn btn-primary" disabled onclick="buildProjectFromTemplate()">Create</button>
@@ -758,7 +771,7 @@
   <script type>{
       { }// highlighting fixed in vscode
 
-      // SCRIPT.PROJECT
+      // SCRIPT.GAMES
       var editorStatusCountup = -1;
 
       // Views setup
@@ -793,9 +806,9 @@
         let templateCommunity = $("#template-community")[0];
         templateBasic.innerHTML = '';
         templateCommunity.innerHTML = ''
-        
+
         $("#game-list")[0].innerHTML = '<div>Loading<span class="loading"></span></div>' // Game page loading
-        
+
         // Send request
         send("!deno-get-projects")
       }
@@ -828,6 +841,17 @@
       `
         }
         $("#game-list")[0].innerHTML = denoListHtml
+      }
+      function searchGames() {
+        let search = $("#games-search")[0].value.toLowerCase()
+        $(".game-item").each(function () {
+          let gameName = $(this).find(".game-item-title").text().toLowerCase()
+          if (gameName.includes(search)) {
+            $(this).show()
+          } else {
+            $(this).hide()
+          }
+        })
       }
       function updateMaxPlayers() {
         let val = $("#build-max-players")[0].value
@@ -905,7 +929,7 @@
             } else {
               console.log("Failed to import ace editor")
             }
-           }, 1000)
+          }, 1000)
         }
       }
       function editProject(projName) {
@@ -1104,7 +1128,7 @@
           iframe?.contentWindow?.postMessage(data.slice(1), '*');
           return
         }
-        
+
         console.log("%c" + data, 'background: #000; color: #ff00ff')
         let [firstArg, secondArg] = data.split(/ (.+)/s)
         if (firstArg === "ping") {
@@ -1174,7 +1198,7 @@
             }
             clearPoints()
             for (let gd of globeData) {
-              addPoint(gd.lat, gd.lng, statusColors[gd.status||"offline"], gd.count)
+              addPoint(gd.lat, gd.lng, statusColors[gd.status || "offline"], gd.count)
               if (gd.status === "self") {
                 myGeo = { lat: gd.lat, lng: gd.lng }
               }
