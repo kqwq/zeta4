@@ -3,12 +3,11 @@
 
 3 Ways to Access the KA Metaverse
 
-1. [KHAN ACADEMY] https://www.khanacademy.org/computer-programming/new-webpage/5126673513103360?editor=no&width=960&height=540
+1. via Khan Academy https://www.khanacademy.org/computer-programming/new-webpage/5126673513103360?editor=no&width=960&height=540
+2. Fullscreen mode https://kqwq.me/zeta4/client/
+3. If all else fails, follow the instructions at https://kqwq.me/metaverse
 
-2. [NEW WEBPAGE] https://kqwq.me/metaverse
-
-3. [FULLSCREEN] https://kqwq.me/zeta4/client/
-
+If you think this is cool, please share this project with your friends! It took me years to get this working.
 Questions? Please reach out to kqwq#2348 on Discord or @squishypill on Twitter.
 
 -->
@@ -395,12 +394,11 @@ Questions? Please reach out to kqwq#2348 on Discord or @squishypill on Twitter.
   </div>
 
   <div class="container page mt-5" id="home-games">
-    <h3>Games</h3>
-    <div class="row">
+    <div class="d-flex justify-content-center">
+      <input autocomplete="off" id="games-search" placeholder="Search games" onkeyup="searchGames()" class="form-control col-4">
       <button onclick="getProjects()" class="btn btn-success btn-sm">Refresh</button>
-      <input autocomplete="off" id="games-search" placeholder="Search games" onkeyup="searchGames()"
-        class="form-control col-8">
     </div>
+    <hr/>
     <div id="game-list"> </div>
   </div>
 
