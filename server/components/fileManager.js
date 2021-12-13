@@ -204,7 +204,6 @@ class FileManager {
       isTemplate: true,
       isBasicTemplate: true,
       basedOn: null,
-      created: new Date(),
       views: 0,
       ratings: [0, 0, 0, 0, 0],
       maxPlayers: 10,
@@ -266,7 +265,6 @@ class FileManager {
       author: writerUid,
       isTemplate: newInfo.isTemplate,
       isBasicTemplate: false,
-      created: oldInfo.created || new Date(),
       views: 0 || oldInfo.views,
       ratings: oldInfo.ratings || [0, 0, 0, 0, 0],
       maxPlayers: maxPlayers
