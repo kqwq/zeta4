@@ -267,7 +267,7 @@ class FileManager {
       isTemplate: newInfo.isTemplate,
       isBasicTemplate: false,
       created: oldInfo.created || new Date(),
-      views: oldInfo.views || 0,
+      views: 0 || oldInfo.views,
       ratings: oldInfo.ratings || [0, 0, 0, 0, 0],
       maxPlayers: maxPlayers
     }
