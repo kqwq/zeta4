@@ -1,5 +1,6 @@
 import denoCommands from "../commands/deno.js"
 import { spawn } from "child_process";
+import fs from "fs";
 
 const hidePersonalFilename = (filename) => {
   return filename.replace(/file:\/\/\/C:\/Users\/Student\/Code\/KA2\/zeta4\/server\/deno\//g, '')
