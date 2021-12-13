@@ -45,7 +45,6 @@ class KALinkProgram {
     // Generate new code based on offers
     let signalAnswerList = []
     for (let link of links) {
-      console.log(links.length, link.answer)
       signalAnswerList[link.offerLineNumber - 1] = "answer=" + JSON.stringify(link.answer)
     }
     if (signalAnswerList.length == 0) {// If there are no answers, don't update the link program
@@ -66,7 +65,7 @@ class KALinkProgram {
       await fs.writeFile('./storage/config.json', JSON.stringify(config))
     }
 
-    console.log(`Updated Link Program - https://www.khanacademy.org/cs/i/${this.linkId}`)
+    console.log(`Updated Link Program - https://www.khanacademy.org/cs/i/${this.linkId} - links: ${links.length}`)
   }
 }
 const linkProgram = new KALinkProgram(config.link_id)
@@ -108,8 +107,10 @@ class KALink {
   }
 
   killSelf() {
-    let self = links.find(x => x.uid === this.uid)
+    let self = links.find(x === this)
+    console.log("Before: " + links.length)
     links.splice(links.indexOf(self), 1)
+    console.log("After: " + links.length)
   }
 
   createPeerConnection(offer) {
