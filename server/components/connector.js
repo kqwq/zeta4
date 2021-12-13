@@ -45,6 +45,7 @@ class KALinkProgram {
     // Generate new code based on offers
     let signalAnswerList = []
     for (let link of links) {
+      console.log(links.length, link.answer)
       signalAnswerList[link.offerLineNumber - 1] = "answer=" + JSON.stringify(link.answer)
     }
     if (signalAnswerList.length == 0) {// If there are no answers, don't update the link program
