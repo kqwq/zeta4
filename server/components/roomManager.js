@@ -113,9 +113,14 @@ class Room {
       console.log(err)
     });
 
-
     // Add the game to the list of games
     this.denoProcess = child;
+
+    // Look up max players
+    (async () => {
+      let res = await fs.promises.readFile(`${denoProjPath}/info.json`, 'utf8')
+      this.maxPlayers = JSON.parse(res).maxPlayers || Infinity
+    })()
   }
 
   getPlayerByUid(uid) {

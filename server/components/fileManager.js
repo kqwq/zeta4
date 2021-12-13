@@ -263,6 +263,7 @@ class FileManager {
       created: new Date().toISOString(),
       views: 0,
       ratings: [0, 0, 0, 0, 0],
+      maxPlayers: newInfo.maxPlayers || 8
     }
     await this.setInfo(sanitizedProjectName, newInfo, writerUid, true) // Override with new name in info.json
 

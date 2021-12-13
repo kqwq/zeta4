@@ -124,6 +124,7 @@ class KALink {
       this.answer = answer
       linkProgram.queueLink(this)
     }).on('connect', () => {
+      this.removeSelfFromLinks()
       this.turnServer.connectAsPeer(this)
     }).on('close', () => {
       this.killSelf()

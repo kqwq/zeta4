@@ -403,6 +403,8 @@
         <label class="form-check-label" for="kam-proj-is-template">List as Template</label>
       </div>
     </form>
+    Max players (2-100): <p id="kam-proj-max-players" contenteditable="true">max-players</p>
+
     Author: <b id="kam-proj-author">a</b>
     <br><br>
     <button class="btn btn-primary" onclick="joinProject()" id="kam-proj-join">Join</button>
@@ -437,7 +439,7 @@
         };
 
         // Append iframe to document body
-        document.getElementById('view-view').appendChild(iframe);
+        $("#view-view")[0].appendChild(iframe);
       </script>
     </div>
 
@@ -500,10 +502,13 @@
         <!-- Multi-line -->
         <textarea class="form-control" id="build-desc" rows="3"></textarea>
       </div>
-      <div class="form-group col-6" style="margin-left: 20px">
-
+      <div class="form-group col-8" style="margin-left: 20px">
         <input class="form-check-input" type="checkbox" value="" id="build-is-template">
         <label class="form-check-label" for="build-is-template">List as Template</label>
+      </div>
+      <div class="form-group col-12">
+        <input type="range" class="custom-range" id="build-max-players" min="2" max="21" value="8" onchange="updateMaxPlayers()">
+        <label for="build-max-players">Max players - <span id="max-players">8</span></label>
       </div>
 
     </form>
@@ -514,13 +519,7 @@
     </div>
   </div>
 
-  <div id="view-stdout">
-
-  </div>
-
-
-
-
+  <div id="view-stdout"> </div>
   <!-- SCRIPT.HOME -->
   <script type>
     var myGeo = {
@@ -617,7 +616,7 @@
       .arcDashInitialGap(1)
       .arcDashAnimateTime(ARC_ANIMATION_DURATION)
       .arcsTransitionDuration(0)
-      (document.getElementById('globeViz'));
+      ($("#globeViz")[0]);
 
     globe.controls().autoRotate = true;
 
@@ -630,15 +629,15 @@
         enter: "Enter into the metaverse and join a multiplayer-enabled project",
         build: "Build a new metaverse project or use a template (must be logged in)",
       }
-      document.getElementById('home-instructions').innerHTML = instructions[buttonName]
+      $("#home-instructions")[0].innerHTML = instructions[buttonName]
     }
 
     function hideGraphics(chColor) {
       if (chColor) {
-        document.getElementById('btn-container').style['background-color'] = '#0a082e'
+        $("#btn-container")[0].style['background-color'] = '#0a082e'
         globe = null // Garbage collect
       }
-      document.getElementById('white-screen').style.display = 'none'
+      $("#white-screen")[0].style.display = 'none'
     }
 
   </script>
@@ -651,10 +650,10 @@
     var ppAnimation = 1;
     var ppAnimationTarget = 1;
     var ppShown = true;
-    var ppu = document.getElementById("pp-username")
+    var ppu = $("#pp-username")[0]
     function ppShow() { // Show pp card and show small username input
-      document.getElementById("btn-login-as").disabled = false;
-      document.getElementById("bio-change-container").style.display = "none";
+      $("#btn-login-as")[0].disabled = false;
+      $("#bio-change-container")[0].style.display = "none";
       ppAnimationTarget = 0;
     }
     function ppHide() { // Hide pp card and show large username input
@@ -682,16 +681,16 @@
       send("!get-ka-profile " + fetchingUsername)
     }
     function logInAs() {
-      document.getElementById("btn-login-as").disabled = true;
-      document.getElementById("bio-change-container").style.display = "block";
-      document.getElementById("bio-add-pin").textContent = bioChangePIN;
-      let txt = document.getElementById("pp-bio").textContent
+      $("#btn-login-as")[0].disabled = true;
+      $("#bio-change-container")[0].style.display = "block";
+      $("#bio-add-pin")[0].textContent = bioChangePIN;
+      let txt = $("#pp-bio")[0].textContent
       // Make sure bio contains the PIN
       txt = `<b>New bio: </b>${txt.slice(0, 160 - bioChangePIN.length)}<span>${bioChangePIN}</span>`
-      document.getElementById("pp-bio").innerHTML = txt
+      $("#pp-bio")[0].innerHTML = txt
     }
     function verifyBioChange() {
-      document.getElementById("btn-verify").disabled = true;
+      $("#btn-verify")[0].disabled = true;
       send(`!sign-up-with-bio-pin ${oh || localStorage.getItem("ka.metaverse:offerHash")}`)
     }
 
@@ -707,10 +706,10 @@
         if (ppShown) {
           ppShown = false;
           ppu.style.marginTop = "40px"
-          document.getElementById("home-login").appendChild(ppu)
-          document.getElementById("pp").style.display = "none";
-          document.getElementById("btn-login-as").style.display = "none";
-          document.getElementById("bio-change-container").style.display = "none";
+          $("#home-login")[0].appendChild(ppu)
+          $("#pp")[0].style.display = "none";
+          $("#btn-login-as")[0].style.display = "none";
+          $("#bio-change-container")[0].style.display = "none";
           ppu.focus()
         }
       } else {
@@ -718,9 +717,9 @@
           ppShown = true;
           ppu.style.marginLeft = "0px";
           ppu.style.marginTop = "0px"
-          document.getElementById("pp-username-container").appendChild(ppu)
-          document.getElementById("pp").style.display = "flex";
-          document.getElementById("btn-login-as").style.display = "block";
+          $("#pp-username-container")[0].appendChild(ppu)
+          $("#pp")[0].style.display = "flex";
+          $("#btn-login-as")[0].style.display = "block";
           ppu.focus()
         }
       }
@@ -750,8 +749,8 @@
       console.log(name, "hello");
       send("!change-guest-uid " + name)
       // Show login button
-      document.getElementById("btn-login").style.display = "block";
-      document.getElementById("edit-name").innerHTML = "edit name"
+      $("#btn-login")[0].style.display = "block";
+      $("#edit-name")[0].innerHTML = "edit name"
     }
 
   </script>
@@ -765,7 +764,7 @@
       // Views setup
       var view = 'server'
       function chView(newView) {
-        var views = document.getElementById('kam-views').getElementsByTagName('a');
+        var views = $("#kam-views")[0].getElementsByTagName('a');
         for (var i = 0; i < views.length; i++) {
           views[i].className = '';
           document.getElementById("view-" + views[i].id).style.display = 'none';
@@ -789,13 +788,13 @@
       var projectClientCode = ""
       function getProjects() {
         // Wipe build page templates
-        document.querySelector('#build-refresh').disabled = true;
-        let templateBasic = document.querySelector('#template-basic');
-        let templateCommunity = document.querySelector('#template-community');
+        $("#build-refresh")[0].disabled = true;
+        let templateBasic = $("#template-basic")[0];
+        let templateCommunity = $("#template-community")[0];
         templateBasic.innerHTML = '';
         templateCommunity.innerHTML = ''
         
-        document.getElementById('game-list').innerHTML = '<div>Loading<span class="loading"></span></div>' // Game page loading
+        $("#game-list")[0].innerHTML = '<div>Loading<span class="loading"></span></div>' // Game page loading
         
         // Send request
         send("!deno-get-projects")
@@ -828,33 +827,39 @@
 </div>
       `
         }
-        document.getElementById('game-list').innerHTML = denoListHtml
+        $("#game-list")[0].innerHTML = denoListHtml
+      }
+      function updateMaxPlayers() {
+        let val = $("#build-max-players")[0].value
+        if (val === 21) val = 100
+        $("#max-players")[0].textContent = val
       }
       function aboutProject(projName) {
         myProject = projName ? projects.find(p => p.name == projName) : myProject;
         // Update html
-        document.getElementById('kam-proj-title').textContent = myProject.name;
-        document.getElementById('kam-proj-desc').textContent = myProject.desc;
-        document.getElementById('kam-proj-version').textContent = myProject.version;
-        document.getElementById('kam-proj-author').textContent = myProject.author;
-        document.getElementById('kam-proj-is-template').checked = myProject.isTemplate;
+        $("#kam-proj-title")[0].textContent = myProject.name;
+        $("#kam-proj-desc")[0].textContent = myProject.desc;
+        $("#kam-proj-version")[0].textContent = myProject.version;
+        $("#kam-proj-author")[0].textContent = myProject.author;
+        $("#kam-proj-is-template")[0].checked = myProject.isTemplate;
+        $("#kam-proj-max-players")[0].checked = myProject.maxPlayers || 8;
 
         // Disable buttons and stdout view if you're not the author
         let disableBtns = myProject.author !== uid;
-        document.getElementById('kam-proj-save').disabled = disableBtns;
-        document.getElementById('kam-proj-edit').innerHTML = disableBtns ? 'Edit (view only)' : 'Edit';
-        document.getElementById('kam-proj-delete').disabled = disableBtns;
-        document.getElementById('editor-save').disabled = disableBtns;
-        document.getElementById('editor-run').disabled = disableBtns;
-        document.getElementById('editor-stop').disabled = disableBtns;
-        document.getElementById('stdout').style['pointer-events'] = disableBtns ? 'none' : 'auto';
+        $("#kam-proj-save")[0].disabled = disableBtns;
+        $("#kam-proj-edit")[0].innerHTML = disableBtns ? 'Edit (view only)' : 'Edit';
+        $("#kam-proj-delete")[0].disabled = disableBtns;
+        $("#editor-save")[0].disabled = disableBtns;
+        $("#editor-run")[0].disabled = disableBtns;
+        $("#editor-stop")[0].disabled = disableBtns;
+        $("#stdout")[0].style['pointer-events'] = disableBtns ? 'none' : 'auto';
 
         // Disable editors
         editorHtml?.setReadOnly(disableBtns);
         editorServer?.setReadOnly(disableBtns);
 
         // Editor options text
-        document.getElementById('editor-status').textContent = disableBtns ? 'No edit access' : 'Not running';
+        $("#editor-status")[0].textContent = disableBtns ? 'No edit access' : 'Not running';
 
         chPage('home-games-project');
       }
@@ -862,7 +867,7 @@
         myProject = projName ? projects.find(p => p.name == projName) : myProject;
         chPage('home-games-project-join')
         iframe.srcdoc = "Loading..."
-        document.getElementById('home-games-project-join').appendChild(iframe) // Move iframe to home-games-project-join page
+        $("#home-games-project-join")[0].appendChild(iframe) // Move iframe to home-games-project-join page
         send("!join-game " + myProject.name)
       }
       function leaveProject() {
@@ -875,12 +880,13 @@
         }
         myProject = {
           name: myProject.name,
-          desc: document.getElementById('kam-proj-desc').textContent.slice(0, 1024), // Shorten
-          version: document.getElementById('kam-proj-version').textContent.slice(0, 20),
+          desc: $("#kam-proj-desc")[0].textContent.slice(0, 1024), // Shorten
+          version: $("#kam-proj-version")[0].textContent.slice(0, 20),
           author: uid,
-          isTemplate: document.getElementById('kam-proj-is-template').checked,
+          isTemplate: $("#kam-proj-is-template")[0].checked,
           lastUpdated: Date.now(),
-          players: []
+          players: [],
+          maxPlayers: $("#kam-proj-max-players")[0].value,
         }
         aboutProject();
         send("!deno-update-info " + JSON.stringify(myProject))
@@ -931,7 +937,7 @@
           code: serverCode
         }
         send("!deno-save-and-run-server " + JSON.stringify(obj));
-        document.getElementById('editor-status') = "Starting..."
+        $("#editor-status")[0] = "Starting..."
       }
       function stopServerCode() {
         send("!deno-kill")
@@ -941,7 +947,7 @@
         iframe.srcdoc = htmlCode; // iframe is global
       }
       function saveClientCode() {
-        document.getElementById("editor-save").disabled = true
+        $("#editor-save")[0].disabled = true
         let clientCode = editorHtml.getSession().getValue();
         let obj = {
           project: myProject.name,
@@ -951,7 +957,7 @@
       }
 
       // Make editor-options draggable
-      dragElement(document.getElementById("editor-options"));
+      dragElement($("#editor-options")[0]);
 
       function dragElement(elmnt) { // Source: https://www.w3schools.com/howto/tryit.asp?filename=tryhow_js_draggable
         var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
@@ -1037,7 +1043,7 @@
         page = newPage
         document.getElementById(page).style.display = "block";
         let fullPath = ""
-        document.getElementById("kam-breadcrumbs").innerHTML = page.split("-").map(s => {
+        $("#kam-breadcrumbs")[0].innerHTML = page.split("-").map(s => {
           fullPath += s + "-"
           return `<a href="javascript:void(0)" onclick='chPage("${fullPath.slice(0, fullPath.length - 1)}")'>${breadcrumbTextView(s)}</a>`
         }).join(" &gt; ")
@@ -1045,8 +1051,8 @@
         // Special rules
         if (page === "home") {
           if (isConnected) send("!globe")
-          document.getElementById("view-stdout").style.display = "none";
-          document.getElementById("kam-views").style.display = "none";
+          $("#view-stdout")[0].style.display = "none";
+          $("#kam-views")[0].style.display = "none";
         } else if (page === "home-build") {
           if (!uid || uid.includes('-')) {
             alert("Log into your Khan Academy account to create projects.")
@@ -1054,15 +1060,15 @@
             return
           }
         } else if (page == "home-games-project-edit") {
-          document.getElementById("kam-views").style.display = "inline";
+          $("#kam-views")[0].style.display = "inline";
           chView("html");
-          document.getElementById("view-view").appendChild(iframe); // Move iframe to home-games-project-edit page
+          $("#view-view")[0].appendChild(iframe); // Move iframe to home-games-project-edit page
         } else {
-          document.getElementById("kam-views").style.display = "none";
+          $("#kam-views")[0].style.display = "none";
           terminalActive = false;
           editorStatusCountup = -1;
-          document.getElementById("view-stdout").style.display = "none";
-          document.getElementById("btn-verify").disabled = false;
+          $("#view-stdout")[0].style.display = "none";
+          $("#btn-verify")[0].disabled = false;
         }
 
       }
@@ -1114,14 +1120,14 @@
           if (page === "home-games-project-edit") {
             editorStatusCountup = -1;
             let statusCode = secondArg
-            document.getElementById("editor-status").textContent = `Exit code ${statusCode}`
+            $("#editor-status")[0].textContent = `Exit code ${statusCode}`
           } else if (page === "home-games-project-join") {
             iframe.srcdoc = "";
             leaveProject()
             alert("Game crashed on server")
           }
         } else if (firstArg === "deno-save-client-success") {
-          document.getElementById("editor-save").disabled = false // enable button
+          $("#editor-save")[0].disabled = false // enable button
         } else if (firstArg == "geo") {
           let geoData = JSON.parse(data.slice(4))
           /// TODO not used
@@ -1151,9 +1157,9 @@
           populateProjects()
         } else if (firstArg === 'set-uid') {
           uid = secondArg
-          document.getElementById("logged-in-as-container").style.display = "block"
-          document.getElementById("logged-in-as").innerText = uid
-          document.getElementById("kam-status").textContent = "✓"
+          $("#logged-in-as-container")[0].style.display = "block"
+          $("#logged-in-as")[0].innerText = uid
+          $("#kam-status")[0].textContent = "✓"
           localStorage.setItem("ka.metaverse:uid", uid)
         } else if (firstArg === 'set-password') {
           localStorage.setItem("ka.metaverse:password", secondArg)
@@ -1180,30 +1186,30 @@
             ppHide()
           } else {
             let json = JSON.parse(secondArg)
-            document.getElementById("pp-real-name").textContent = json.nickname;
-            document.getElementById("pp-avatar").src = json.avatarSrc;
-            document.getElementById("pp-bio").textContent = json.bio;
-            document.getElementById("pp-ep").textContent = json.points ? "?" : "+" + json.points.toLocaleString()
-            document.getElementById("login-as-username").textContent = fetchingUsername
+            $("#pp-real-name")[0].textContent = json.nickname;
+            $("#pp-avatar")[0].src = json.avatarSrc;
+            $("#pp-bio")[0].textContent = json.bio;
+            $("#pp-ep")[0].textContent = json.points ? "?" : "+" + json.points.toLocaleString()
+            $("#login-as-username")[0].textContent = fetchingUsername
             bioChangePIN = json.pin
             ppShow()
           }
           fetchUsername()
         } else if (firstArg === "sign-up-with-bio-pin") {
-          document.getElementById("btn-verify").disabled = false;
+          $("#btn-verify")[0].disabled = false;
           alert("Success! You can now log in as " + fetchingUsername + " automatically.")
           // Remove login button on home page
-          document.getElementById("btn-login").style.display = "none"
-          document.getElementById("edit-name").innerHTML = "log out"
+          $("#btn-login")[0].style.display = "none"
+          $("#edit-name")[0].innerHTML = "log out"
           chPage("home")
         } else if (firstArg === "auto-login") {
           if (secondArg === "error") {
-            document.getElementById("kam-status").textContent = "Auto-login failed"
+            $("#kam-status")[0].textContent = "Auto-login failed"
             send(`!get-guest-uid`)
           } else if (secondArg === "success") {
             // Remove login button on home page
-            document.getElementById("btn-login").style.display = "none"
-            document.getElementById("edit-name").innerHTML = "log out"
+            $("#btn-login")[0].style.display = "none"
+            $("#edit-name")[0].innerHTML = "log out"
           }
         }
       }
@@ -1232,21 +1238,21 @@
         }).on("signal", function (data) {
           console.log("%cCopy for manual input", "background: #000; font-size: x-large")
           console.log("%c" + "SDP_" + randomFingerprint + "_" + btoa(data.sdp), 'background: #000; color: #00ff00')
-          document.getElementById("not-connected").style.display = "none"
-          document.getElementById("kam-status").innerHTML = 'Connecting<span class="loading"></span>'
+          $("#not-connected")[0].style.display = "none"
+          $("#kam-status")[0].innerHTML = 'Connecting<span class="loading"></span>'
           sendSdpPackets(JSON.stringify(data))
         }).on("connect", function () {
           isConnected = true
-          document.getElementById("kam-status").textContent = "✓"
+          $("#kam-status")[0].textContent = "✓"
           onServerConnected()
         }).on("data", function (data) {
           onRecieve(data.toString())
         }).on("close", function () {
           isConnected = false
-          document.getElementById("kam-status").textContent = "Disconnected"
-          document.getElementById("not-connected").style.display = "block"
+          $("#kam-status")[0].textContent = "Disconnected"
+          $("#not-connected")[0].style.display = "block"
         }).on("error", function (err) {
-          document.getElementById("kam-status").textContent = "Error - open console";
+          $("#kam-status")[0].textContent = "Error - open console";
           console.log("error", err)
         })
         parent.peer = peer
@@ -1264,7 +1270,7 @@
           let hex = "0123456789abcdef"
           let packetSize = 494
           if (content.length >= packetSize * 16) {
-            document.getElementById("kam-status").textContent = "SDP offer too long to send";
+            $("#kam-status")[0].textContent = "SDP offer too long to send";
             console.error("SDP offer too long")
             return
           }
@@ -1304,7 +1310,7 @@
         let url = `https://www.khanacademy.org/api/internal/scratchpads/${linkId}?callback=?`
         $.getJSON(url, data => {
           if (data == null) {
-            document.getElementById("kam-status").innerHTML = "Link Program deleted - contact Squishy.";
+            $("#kam-status")[0].innerHTML = "Link Program deleted - contact Squishy.";
             console.error("Connection error: Link Program was likely deleted. Please contact Squishy.")
             return
           }
@@ -1321,7 +1327,7 @@
           if (!serverOffer || !serverOffer.includes('answer=')) {
             connectionAttempts++
             if (connectionAttempts > 6) {
-              document.getElementById('kam-status').textContent = "Server offline - contact Squishy."
+              $("#kam-status")[0].textContent = "Server offline - contact Squishy."
               console.error("Connection error: Link Program is unresponsive. Please contact Squishy.")
               return
             }
@@ -1351,7 +1357,7 @@
             console.log("LocalStorage is not available, which is OK")
           }
           if (uid && password && !uid.includes("-")) { // If uid has dash, it's a default guest/custom guest account
-            document.getElementById("kam-status").innerHTML = 'Logging in<span class="loading"></span>'
+            $("#kam-status")[0].innerHTML = 'Logging in<span class="loading"></span>'
             send(`!auto-login ${uid} ${password} ${oh}`) // Login to the server
           } else {
             send(`!get-guest-uid ${oh}`) // Get guest (temporary) username for those who don't log in yet
@@ -1377,7 +1383,7 @@
           let hours = Math.floor(editorStatusCountup / 3600)
           let minutes = Math.floor((editorStatusCountup - hours * 3600) / 60)
           let seconds = Math.floor(editorStatusCountup - hours * 3600 - minutes * 60)
-          document.getElementById("editor-status").textContent = `${hours}h ${minutes}m ${seconds}s`
+          $("#editor-status")[0].textContent = `${hours}h ${minutes}m ${seconds}s`
         }
       }, 1000)
 
@@ -1391,28 +1397,28 @@
   <script type>
     // SCRIPT.BUILD
     // Detect dropdown selection without jQuery
-    var dropdown = document.querySelector('#build-dropdown-menu');
-    document.querySelector('#build-dropdown-toggle').addEventListener('click', function () {
+    var dropdown = $("#build-dropdown-menu")[0];
+    $("#build-dropdown-toggle")[0].addEventListener('click', function () {
       dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
     });
     function onTemplateSelect(projName) {
       let projectMatch = projects.find(proj => proj.name == projName)
-      document.querySelector('#build-title').innerHTML = projName;
-      document.querySelector('#build-version').value = projectMatch.version
-      document.querySelector('#build-desc').value = `Based on ${projName}\n${projectMatch.desc}`.slice(0, 140)
+      $("#build-title")[0].innerHTML = projName;
+      $("#build-version")[0].value = projectMatch.version
+      $("#build-desc")[0].value = `Based on ${projName}\n${projectMatch.desc}`.slice(0, 140)
     }
     function acceptDisclaimer() {
-      document.querySelector('#disclaimer').style.display = 'none';
-      document.querySelector('#build-create').disabled = false;
+      $("#disclaimer")[0].style.display = 'none';
+      $("#build-create")[0].disabled = false;
     }
     function viewDisclaimer() {
-      document.querySelector('#disclaimer').style.display = 'block';
+      $("#disclaimer")[0].style.display = 'block';
       window.scrollTo(0, 0);
     }
     function populateTemplateOptions() {
-      document.querySelector("#build-refresh").disabled = false;
-      let templateBasic = document.querySelector('#template-basic');
-      let templateCommunity = document.querySelector('#template-community');
+      $("#build-refresh")[0].disabled = false;
+      let templateBasic = $("#template-basic")[0];
+      let templateCommunity = $("#template-community")[0];
       projects.filter(proj => proj.isTemplate).forEach(function (proj) {
         let option = document.createElement('a');
         option.className = 'dropdown-item';
@@ -1431,11 +1437,12 @@
       });
     }
     function buildProjectFromTemplate() {
-      let projBasedOn = document.querySelector('#build-title').innerHTML;
-      let projName = document.querySelector('#build-new-name').value;
-      let projVersion = document.querySelector('#build-version').value;
-      let projDesc = document.querySelector('#build-desc').value;
-      let projIsTemplate = document.querySelector('#build-is-template').checked;
+      let projBasedOn = $("#build-title")[0].innerHTML;
+      let projName = $("#build-new-name")[0].value;
+      let projVersion = $("#build-version")[0].value;
+      let projDesc = $("#build-desc")[0].value;
+      let projIsTemplate = $("#build-is-template")[0].checked;
+      let projMaxPlayers = $("#build-max-players")[0].value;
       if (projName == '') {
         alert('Project name cannot be empty');
         return;
@@ -1454,6 +1461,7 @@
         desc: projDesc,
         version: projVersion,
         isTemplate: projIsTemplate,
+        maxPlayers: projMaxPlayers
       };
       send('!deno-create-project ' + JSON.stringify(projObj));
     }
@@ -1467,7 +1475,7 @@
     var fitAddon = new FitAddon.FitAddon();
     term.loadAddon(fitAddon);
     fitAddon.fit();
-    term.open(document.getElementById('view-stdout'));
+    term.open($("#view-stdout")[0]);
     term.nextLine = function () {
       term.write('\r\nmetaverse $ ');
     };
@@ -1520,7 +1528,7 @@
       "selectionBackground": "#444444",
       "cursorColor": "#d0d0d0"
     });
-    document.getElementById('view-stdout').style.display = 'none';
+    $("#view-stdout")[0].style.display = 'none';
   </script>
   <script></script>
 </body>

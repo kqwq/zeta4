@@ -10,7 +10,6 @@ turnListner.start()
 // Pipe Peer object from connector.js to peer.js
 turnListner.onNewPeer((uid, peer, ipInfo) => {
   console.log("New peer connected:", uid, ipInfo.ip)
-  peer.removeSelfFromLinks()
   new Peer(uid, peer, ipInfo)
 })
  
