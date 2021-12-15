@@ -1,14 +1,9 @@
 <!DOCTYPE html>
 <!--
+  
+Have fun!
 
-3 Ways to Access the KA Metaverse
-
-1. via Khan Academy https://www.khanacademy.org/cs/-/5925290884775936?editor=no&width=960&height=540
-2. Fullscreen mode https://kqwq.me/zeta4/client/
-3. If all else fails, follow the instructions at https://kqwq.me/metaverse
-
-If you think this is cool, please share this project with your friends! It took me years to get this working.
-Questions? Please reach out to kqwq#2348 on Discord or @squishypill on Twitter.
+Message kqwq#2348 on Discord or @squishypill on Twitter if you have any questions/concerns.
 
 -->
 <html>
@@ -616,11 +611,11 @@ Questions? Please reach out to kqwq#2348 on Discord or @squishypill on Twitter.
     // When the user clicks on div, open the popup
     function openSharePopup() {
       let popup = $("#share-popup");
-      popup.hide()
       popup.fadeIn();
     }
+    popup.hide()
     if (localStorage.getItem("ka.metaverse:uid") === null) {
-      setTimeout(openSharePopup)
+      openSharePopup()
     }
     function closeSharePopup() {
       let popup = $("#share-popup");
