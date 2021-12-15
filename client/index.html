@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  
+
 Have fun!
 
 Message kqwq#2348 on Discord or @squishypill on Twitter if you have any questions/concerns.
@@ -609,8 +609,8 @@ Message kqwq#2348 on Discord or @squishypill on Twitter if you have any question
   <script>!function (d, s, id) { var js, fjs = d.getElementsByTagName(s)[0], p = /^http:/.test(d.location) ? 'http' : 'https'; if (!d.getElementById(id)) { js = d.createElement(s); js.id = id; js.src = p + '://platform.twitter.com/widgets.js'; fjs.parentNode.insertBefore(js, fjs); } }(document, 'script', 'twitter-wjs');</script>
   <script>
     // When the user clicks on div, open the popup
+    let popup = $("#share-popup");
     function openSharePopup() {
-      let popup = $("#share-popup");
       popup.fadeIn();
     }
     popup.hide()
@@ -618,7 +618,6 @@ Message kqwq#2348 on Discord or @squishypill on Twitter if you have any question
       openSharePopup()
     }
     function closeSharePopup() {
-      let popup = $("#share-popup");
       popup.fadeOut();
     }
     function copyMetaLink() {
