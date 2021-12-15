@@ -609,15 +609,19 @@ Message kqwq#2348 on Discord or @squishypill on Twitter if you have any question
   <script>!function (d, s, id) { var js, fjs = d.getElementsByTagName(s)[0], p = /^http:/.test(d.location) ? 'http' : 'https'; if (!d.getElementById(id)) { js = d.createElement(s); js.id = id; js.src = p + '://platform.twitter.com/widgets.js'; fjs.parentNode.insertBefore(js, fjs); } }(document, 'script', 'twitter-wjs');</script>
   <script>
     // When the user clicks on div, open the popup
-    let popup = $("#share-popup");
     function openSharePopup() {
+      let popup = $("#share-popup");
       popup.fadeIn();
     }
-    popup.hide()
     if (localStorage.getItem("ka.metaverse:uid") === null) {
+      let popup = $("#share-popup");
       openSharePopup()
+    } else {
+      let popup = $("#share-popup");
+      popup.hide()
     }
     function closeSharePopup() {
+      let popup = $("#share-popup");
       popup.fadeOut();
     }
     function copyMetaLink() {
