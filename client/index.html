@@ -619,7 +619,9 @@ Questions? Please reach out to kqwq#2348 on Discord or @squishypill on Twitter.
       popup.hide()
       popup.fadeIn();
     }
-    openSharePopup()
+    if (localStorage.getItem("ka.metaverse:uid") === null) {
+      setTimeout(openSharePopup)
+    }
     function closeSharePopup() {
       let popup = $("#share-popup");
       popup.fadeOut();
