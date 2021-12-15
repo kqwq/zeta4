@@ -116,6 +116,9 @@ export default [
     name: "deno-update-info",
     exec: async (args, p, peers, rm, fm) => {
       let newInfo = JSON.parse(args)
+      let oldInfo = await fm.getInfo(newInfo.name)
+      newInfo.views = oldInfo.views
+      newInfo.ratings = oldInfo.rating
       await fm.setInfo(newInfo.name, newInfo, p.uid)
     }
   },
