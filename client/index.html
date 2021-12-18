@@ -1392,7 +1392,6 @@ Message kqwq#2348 on Discord or @squishypill on Twitter if you have any question
           sendSdpPackets(JSON.stringify(data))
         }).on("connect", function () {
           isConnected = true
-          $("#kam-status")[0].textContent = "✓"
           onServerConnected()
         }).on("data", function (data) {
           onRecieve(data.toString())
@@ -1493,6 +1492,8 @@ Message kqwq#2348 on Discord or @squishypill on Twitter if you have any question
       }
 
       function onServerConnected() {
+        $("#kam-status")[0].textContent = "✓"
+
         // Wait 0.5 seconds to make sure the server has time to connect
         setTimeout(() => {
           getProjects()
@@ -1514,6 +1515,18 @@ Message kqwq#2348 on Discord or @squishypill on Twitter if you have any question
             send(`!get-guest-uid ${oh}`) // Get guest (temporary) username for those who don't log in yet
           }
         }, 500)
+
+        // Wait 1.0 seconds to make sure the server has time to auto-login
+        setTimeout(() => {
+          // Window URL
+          const urlSearchParams = new URLSearchParams(window.location.search);
+          const params = Object.fromEntries(urlSearchParams.entries());
+          if (params.join) {
+            joinProject(params.join)
+          } else if (params.edit) {
+            editProjectButton(params.edit)
+          }
+        }, 1000)
 
       }
 
