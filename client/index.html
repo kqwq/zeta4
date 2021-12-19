@@ -1570,7 +1570,7 @@ Message kqwq#2348 on Discord or @squishypill on Twitter if you have any question
       let projectMatch = projects.find(proj => proj.name == projName)
       $("#build-title")[0].innerHTML = projName;
       $("#build-version")[0].value = projectMatch.version
-      $("#build-desc")[0].value = `Based on ${projName}\n${projectMatch.desc}`.slice(0, 140)
+      $("#build-desc")[0].value = `Based on ${projName}`
     }
     function acceptDisclaimer() {
       $("#disclaimer")[0].style.display = 'none';
