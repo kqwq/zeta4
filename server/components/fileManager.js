@@ -290,6 +290,7 @@ class FileManager {
 
     // Set client and server
     let clientCode = await this.getClient(newInfo.basedOn)
+    clientCode = clientCode.replace('<h1>default</h1>', `<h1>${sanitizedProjectName}</h1>`)
     let serverCode = await this.getServer(newInfo.basedOn)
     await this.setClient(sanitizedProjectName, clientCode, writerUid)
     await this.setServer(sanitizedProjectName, serverCode, writerUid)
