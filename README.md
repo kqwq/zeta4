@@ -5,7 +5,7 @@ Inspiration for this project came from Khan Academy's [Live Editor](https://gith
 ## Explanation
 At first, this project was simply a library for connecting with a remote NodeJS server. Eventually, I added multi-connection support and removed peer-to-peer support left over from zeta3. This allowed scalability to handle 10+ connections (while sacrificing a tiny bit of latency). This project evolved into a full-fledged platform that now supports user-created projects. Logged in users can create, edit, and delete up to 5 of their own multiplayer projects. Users who aren't logged in can join projects but can't create their own. Logging in is done by editing the user's bio with a special code that identifies them. This is a one-time process; next time they visit the site, their localStorage will log them in. 
 ### TLDR; I'm a visual learner
-[Server layout](https://raw.githubusercontent.com/kqwq/zeta4/master/server/file_layout.pdfs)
+[Server layout](https://github.com/kqwq/zeta4/blob/master/server/file_layout.pdf)
 ### Won't this get banned on Khan Academy?
 No. This project runs in the [New webpage](https://www.khanacademy.org/computer-programming/new/webpage) page on Khan Academy. Copy the [the obfuscated code](https://kqwq.me/zeta4/client/popup.html) into the editor and you'll be able to connect to the server. This projects breaks no explicitly stated guidelines on Khan Academy.
 
