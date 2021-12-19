@@ -17,6 +17,7 @@ function trimTo(str, len) {
 }
 
 function sanitize(str) {
+  str = str.replace(/\ /g, '-');
   return str.replace(/[^a-zA-Z0-9_\-]/g, '').toLowerCase();
 }
 
@@ -286,13 +287,14 @@ class FileManager {
     }
     await this.setInfo(sanitizedProjectName, newInfo, writerUid, true) // Override with new name in info.json
 
-
-
     // Set client and server
     let clientCode = await this.getClient(newInfo.basedOn)
     let serverCode = await this.getServer(newInfo.basedOn)
     await this.setClient(sanitizedProjectName, clientCode, writerUid)
     await this.setServer(sanitizedProjectName, serverCode, writerUid)
+
+    // Set server storage directory
+    await fs.promises.mkdir(path.join(this.deno, sanitizedProjectName, "storage"))
 
     // Return new project info, client code, and server code
     return {
