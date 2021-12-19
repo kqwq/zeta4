@@ -130,16 +130,33 @@ export default [
   },
   {
     name: 'set-item',
-    exec: (args, room) => {
-      let [item, value] = args.split(/ (.+)/s);
-      room.setItem(item, value);
+    exec: async(args, room, fm) => {
+      let [key, value] = args.split(/ (.+)/s);
+      let res = await fm.setItem(room.name, key, value);
+      room.sendToDenoProcess('set-item', res);
     }
   },
   {
     name: 'get-item',
-    exec: (args, room) => {
-      let [item] = args.split(/ (.+)/s);
-      room.sendToDenoProcess('get-item', room.getItem(item));
+    exec: async(args, room, fm) => {
+      let [key] = args.split(/ (.+)/s);
+      let res = await fm.getItem(room.name, key);
+      room.sendToDenoProcess('get-item', res);
+    }
+  },
+  {
+    name: 'remove-item',
+    exec: async(args, room, fm) => {
+      let [key] = args.split(/ (.+)/s);
+      let res = await fm.removeItem(room.name, key);
+      room.sendToDenoProcess('remove-item', res);
+    }
+  },
+  {
+    name: 'clear-items',
+    exec: async(args, room, fm) => {
+      let res = await fm.clearItems(room.name);
+      room.sendToDenoProcess('clear-items', res);
     }
   },
   {

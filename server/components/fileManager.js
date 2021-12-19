@@ -1,24 +1,6 @@
 /*
-FileManager gives you a way to log, read, and write files.
-
-If you want to use a database API (e.g. MongoDB) instead of the filesystem, change the following methods
-  - log
-  - read
-  - getClient
-  - getServer
-  - getInfo
-  - setClient
-  - setServer
-  - setInfo
-  - deleteProject
-
-That's it! No need to change anything else.
-
-
-
+FileManager handles 90% of the file system read/write operations.
 */
-
-
 
 import fs from 'fs';
 import path from 'path';
@@ -51,30 +33,8 @@ class FileManager {
     this.globeData = {}
     this.logLengthLimit = 400;
     this.projectInfoCache = []
-    this.defaultClient =
-      this.starterClientHtmlCode = (projName) => `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${projName}</title>
-</head>
-<body>
-    <h1>${projName}</h1>
-    <p>This is your KA metaverse project's HTML code. Your project is stored in the cloud and can be accessed from anywhere.</p>
-    <p>To save, click the save button in the top right corner of the output window.</p>
-</body>
-</html>`;
-    this.defaultServer = (projName) => `console.log('Hello world!');`;
 
-    // Check if storage, deno, logs, and profile directories exist
-    if (!fs.existsSync(this.storage)) {
-      fs.mkdirSync(this.storage);
-    }
-    if (!fs.existsSync(this.deno)) {
-      fs.mkdirSync(this.deno);
-      this.createDefaultProject()
-    }
+    // Check if logs, and profile directories exist
     if (!fs.existsSync(this.logs)) {
       fs.mkdirSync(this.logs);
     }
@@ -184,6 +144,87 @@ class FileManager {
     }
   }
 
+
+  // Server storage
+  validateKey(key) {
+    // Limit key to 32 characters
+    if (key.length > 32) {
+      return {
+        ok: false,
+        key: key.slice(0, 32) + '...',
+        error: `Key length must be less than 32 characters.`
+      }
+    }
+
+    // Limit key to alphanumeric characters, underscores, and dashes
+    if (key.match(/[^a-zA-Z0-9_-]/)) {
+      return {
+        ok: false,
+        key: key,
+        error: `Key must be alphanumeric, underscores, or dashes.`
+      }
+    }
+
+    return {
+      ok: true,
+      key: key
+    }
+  }
+  validateValue(key, value) {
+    // Limit value to 100KB
+    if (value.length > 100 * 1024) {
+      return {
+        ok: false,
+        key: key,
+        error: `Value too large. Max size is 100KB.`
+      }
+    }
+
+    return {
+      ok: true,
+    }
+  }
+  async getItem(projectName, key) {
+    let output = this.validateKey(key)
+    if (!output.ok) return output
+    let filePath = path.join(this.deno, projectName, "storage", key)
+    let file = await fs.promises.readFile(filePath, "utf8")
+    return {
+      ok: true,
+      key: key,
+      value: file
+    }
+  }
+  async setItem(projectName, key, value) {
+    let output = this.validateKey(key)
+    if (!output.ok) return output
+    output = this.validateValue(key, value)
+    if (!output.ok) return output
+    let filePath = path.join(this.deno, projectName, "storage", key)
+    await fs.promises.writeFile(filePath, data)
+    return {
+      ok: true,
+      key: key,
+    }
+  }
+  async removeItem(projectName, key) {
+    let output = this.validateKey(key)
+    if (!output.ok) return output
+    let filePath = path.join(this.deno, projectName, "storage", key)
+    await fs.promises.unlink(filePath)
+    return {
+      ok: true,
+      key: key,
+    }
+  }
+  async clearItems(projectName) {
+    let filePath = path.join(this.deno, projectName, "storage")
+    await fs.promises.rmdir(filePath, { recursive: true })
+    return {
+      ok: true,
+    }
+  }
+
   // Permissions
   async canWrite(projectName, writerUid) {
     // Search cache for project
@@ -192,29 +233,6 @@ class FileManager {
       projInfo = await this.getInfo(projectName)
     }
     return projInfo.author === writerUid || !projInfo.author // If no author, anyone can write
-  }
-
-  async createDefaultProject() {
-    let writerUid = "server"
-    let newProject = {
-      name: "default",
-      desc: "Default project",
-      version: "1.0",
-      author: writerUid,
-      isTemplate: true,
-      isBasicTemplate: true,
-      basedOn: null,
-      views: 0,
-      ratings: [0, 0, 0, 0, 0],
-      maxPlayers: 10,
-    }
-    let clientCode = this.defaultClient("default")
-    let serverCode = this.defaultServer("default")
-    await fs.promises.mkdir(path.join(this.deno, "default"))
-    await this.setInfo("default", newProject, writerUid, true)
-    await this.setClient("default", clientCode, writerUid)
-    await this.setServer("default", serverCode, writerUid)
-    await this.log("server", `Created default project`)
   }
 
   // Misc

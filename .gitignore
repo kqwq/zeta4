@@ -1,4 +1,6 @@
 */.env
 */node_modules
 server/storage/*
-!server/storage/.gitkeep
+!server/storage/deno/
+server/storage/deno/*
+!server/storage/deno/default

@@ -1,15 +1,15 @@
 import denoCommands from "../commands/deno.js"
 import { spawn } from "child_process";
-import fs from "fs";
 
 const hidePersonalFilename = (filename) => {
   return filename.replace(/file:\/\/\/C:\/Users\/Student\/Code\/KA2\/zeta4\/server\/deno\//g, '')
 }
 
 class Room {
-  constructor(roomManager, name, isMaintenance, players, maxPlayers) {
+  constructor(roomManager, fileManager, name, isMaintenance, players, maxPlayers) {
     this.id = roomManager.getNextRoomId();
     this.roomManager = roomManager;
+    this.fileManager = fileManager;
     this.name = name;
     this.isMaintenance = isMaintenance || false;
     this.players = [];
@@ -42,7 +42,7 @@ class Room {
       }
       if (cmd) {
         try {
-          cmd.exec(args, this) // args, room
+          cmd.exec(args, this, this.fileManager) // args, room, fileManager
         } catch (e) {
           this.sendToTerminal(`There was an error executing the command: ${commandName}`)
           this.sendToTerminal(e)
@@ -119,8 +119,8 @@ class Room {
 
     // Look up max players
     (async () => {
-      let res = await fs.promises.readFile(`${denoProjPath}/info.json`, 'utf8')
-      this.maxPlayers = JSON.parse(res).maxPlayers || Infinity
+      let info = await this.fileManager.getInfo(projectName)
+      this.maxPlayers = parseInt(info.maxPlayers) || 100
     })()
   }
 
@@ -184,7 +184,8 @@ class Room {
 
 
 class RoomManager {
-  constructor() {
+  constructor(fileManager) {
+    this.fileManager = fileManager
     this.rooms = []
     this.nextRoomId = 0
   }
@@ -216,7 +217,7 @@ class RoomManager {
         return false
       }
     }
-    let room = new Room(this, projectName, isMaintenance, players, maxPlayers)
+    let room = new Room(this, this.fileManager, projectName, isMaintenance, players, maxPlayers)
     this.rooms.push(room)
     return room
   }

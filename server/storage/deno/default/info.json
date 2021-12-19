@@ -1,0 +1,11 @@
+{
+  "name": "default",
+  "desc": "All the essential tools for building multiplayer games.",
+  "version": "50/50",
+  "author": "kqwq2",
+  "isTemplate": true,
+  "lastUpdated": 1639948537780,
+  "players": [],
+  "maxPlayers": "100",
+  "views": 0
+}

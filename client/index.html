@@ -11,7 +11,7 @@ Message kqwq#2348 on Discord or @squishypill on Twitter if you have any question
 <head>
   <meta charset="utf-8">
   <title>KA Metaverse</title>
-  <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/simple-peer/9.11.0/simplepeer.min.js"></script>
@@ -1153,6 +1153,8 @@ Message kqwq#2348 on Discord or @squishypill on Twitter if you have any question
           enableSnippets: true,
           enableLiveAutocompletion: true,
           displayIndentGuides: true,
+          tabSize: 2,
+          useSoftTabs: true
         }
         editorHtml = ace.edit("view-html");
         editorHtml.setTheme("ace/theme/tomorrow_night");
@@ -1527,7 +1529,6 @@ Message kqwq#2348 on Discord or @squishypill on Twitter if you have any question
             editProjectButton(params.edit)
           }
         }, 1000)
-
       }
 
       // Update loading ellipsis

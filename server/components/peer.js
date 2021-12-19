@@ -4,7 +4,7 @@ import { FileManager } from "./fileManager.js"
 
 let peers = []
 let fileManager = new FileManager()
-let roomManager = new RoomManager()
+let roomManager = new RoomManager(fileManager)
 
 /**
  * 

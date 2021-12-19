@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>default</title>
+  <link rel="stylesheet" href="https://unpkg.com/purecss@2.0.6/build/pure-min.css">
+  <style>
+    .container {
+      padding: 15px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container pure-form pure-form-stacked">
+    <h1>default</h1>
+    <p>This is your project's HTML code. Your project is stored in the cloud and can be accessed from anywhere.</p>
+    <p>To save, click the save button on the top-right editor widget.</p>
+    <fieldset>
+      <legend>Demo</legend>
+      <label for="from-server">From server</label>
+      <textarea id="from-server"></textarea><br>
+      <label for="to-server">Send to server</label>
+      <textarea id="to-server"></textarea>
+      <button onclick="buttonClick()" class="pure-button pure-button-primary">Send</button>
+    </fieldset>
+  </div>
+  <script>
+    // Get data from server
+    addEventListener("message", ({ source, data }) => {
+      if (!source.uid) return; // Do not remove this line
+      let json = JSON.parse(data);
+      document.querySelector("#from-server").value = json;
+      console.log("from-server", json); // Print to browser console
+    });
+    
+    // Send data to server
+    function sendToServer(data) {
+      postMessage(data, "*");
+    }
+    
+    function buttonClick() {
+      let val = document.querySelector('#to-server').value;
+      sendToServer(val);
+    }
+  </script>
+</body>
+</html>
