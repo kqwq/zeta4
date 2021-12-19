@@ -221,6 +221,7 @@ class FileManager {
   async clearItems(projectName) {
     let filePath = path.join(this.deno, projectName, "storage")
     await fs.promises.rmdir(filePath, { recursive: true })
+    await fs.promises.mkdir(filePath)
     return {
       ok: true,
     }
