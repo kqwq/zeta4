@@ -87,17 +87,17 @@ class FileManager {
   // Getters
   async getClient(projectName) {
     let filePath = path.join(this.deno, projectName, "client.html")
-    let file = await fs.promises.readFile(filePath);
+    let file = await fs.promises.readFile(filePath, 'utf8')
     return file
   }
   async getServer(projectName) {
     let filePath = path.join(this.deno, projectName, "server.js")
-    let file = await fs.promises.readFile(filePath);
+    let file = await fs.promises.readFile(filePath, 'utf8')
     return file
   }
   async getInfo(projectName) {
     let filePath = path.join(this.deno, projectName, "info.json")
-    let file = await fs.promises.readFile(filePath);
+    let file = await fs.promises.readFile(filePath, 'utf8')
     return JSON.parse(file)
   }
   async getAllInfo() {
