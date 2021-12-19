@@ -201,7 +201,7 @@ class FileManager {
     output = this.validateValue(key, value)
     if (!output.ok) return output
     let filePath = path.join(this.deno, projectName, "storage", key)
-    await fs.promises.writeFile(filePath, data)
+    await fs.promises.writeFile(filePath, value)
     return {
       ok: true,
       key: key,
