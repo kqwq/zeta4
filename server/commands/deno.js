@@ -129,6 +129,20 @@ export default [
 
   },
   {
+    name: 'set-item',
+    exec: (args, room) => {
+      let [item, value] = args.split(/ (.+)/s);
+      room.setItem(item, value);
+    }
+  },
+  {
+    name: 'get-item',
+    exec: (args, room) => {
+      let [item] = args.split(/ (.+)/s);
+      room.sendToDenoProcess('get-item', room.getItem(item));
+    }
+  },
+  {
     name: 'get-howto-list',
     exec: async(args, room) => {
       // List of files under the "howto" folder

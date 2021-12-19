@@ -1,9 +1,9 @@
-# Zeta4
-
-\>\>\> README not finished \<\<\<<br>
-Multiplayer experiences on Khan Academy.
+# Zeta4 Server
+Multiplayer games on Khan Academy.
 
 Features:
+- Ability to create, edit, and delete projects
+- V
 
 
 ## Build instructions
@@ -26,4 +26,9 @@ This will generate a config.json file with a new KAAS key and project ID. You ca
 ## FAQ
 Q: Where are the server logs stored?<br>
 A: `server/storage/logs/*`
+
+Q: How do I get a new KAAS key?<br>
+A: You don't need to do anything. Just run `npm run start` with a valid Khan Academy username/password pair.
+
+Q: 
 
