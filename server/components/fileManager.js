@@ -189,7 +189,16 @@ class FileManager {
     let output = this.validateKey(key)
     if (!output.ok) return output
     let filePath = path.join(this.deno, projectName, "storage", key)
-    let file = await fs.promises.readFile(filePath, "utf8")
+    let file
+    try { // Check if file exists
+      let file = await fs.promises.readFile(filePath, "utf8")
+    } catch (err) {
+      return {
+        ok: false,
+        key: key,
+        error: `Key not found.`
+      }
+    }
     return {
       ok: true,
       key: key,
