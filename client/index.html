@@ -908,10 +908,11 @@ Message kqwq#2348 on Discord or @squishypill on Twitter if you have any question
 
         terminalActive = false;
         if (newView == 'view') {
-          runHtmlCode()
-        } else if (newView == 'stdout') {
-          terminalActive = true;
+          runHtmlCode() // Run iframe with html code
+        } else {
+          clearIframe() // Clear iframe
         }
+        terminalActive = newView === 'stdout';
         view = newView;
       }
 
@@ -1092,6 +1093,9 @@ Message kqwq#2348 on Discord or @squishypill on Twitter if you have any question
         var htmlCode = editorHtml.getValue();
         iframe.srcdoc = htmlCode; // iframe is global
       }
+      function clearIframe() {
+        iframe.srcdoc = "";
+      }
       function saveClientCode() {
         $("#editor-save")[0].disabled = true
         let clientCode = editorHtml.getSession().getValue();
@@ -1180,7 +1184,10 @@ Message kqwq#2348 on Discord or @squishypill on Twitter if you have any question
         // If old page was home-games-project-join, leave it
         console.log("old page: " + page, "new page: " + newPage)
         if (page === "home-games-project-join" && newPage !== "home-games-project-join") {
-          console.log("Leaving project join page")
+          clearIframe()
+          send("!leave-game")
+        } else if (page === "home-games-project-edit" && newPage !== "home-games-project-edit") {
+          clearIframe()
           send("!leave-game")
         }
         function breadcrumbTextView(s) {
