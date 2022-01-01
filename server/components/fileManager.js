@@ -191,7 +191,7 @@ class FileManager {
     let filePath = path.join(this.deno, projectName, "storage", key)
     let file
     try { // Check if file exists
-      let file = await fs.promises.readFile(filePath, "utf8")
+      file = await fs.promises.readFile(filePath, "utf8")
     } catch (err) {
       return {
         ok: false,
