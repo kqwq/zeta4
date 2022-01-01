@@ -97,7 +97,7 @@ class Room {
         let str = err.toString()
         let firstPlayer = that.players[0]
         that.appendToScriptOutput(str)
-        firstPlayer.send("~" + hidePersonalFilename(str))
+        firstPlayer?.send("~" + hidePersonalFilename(str))
       }
     });
     child.on('close', function (code) {
