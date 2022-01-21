@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import { promises as fs } from "fs";
 import { timingSafeEqual } from 'crypto';
 import fetch from 'node-fetch';
-import { fetchProxy } from '../components/proxyAPIs';
+import { fetchProxy } from '../components/proxyAPIs.js';
 dotenv.config();
 
 function sanitize(str) {
