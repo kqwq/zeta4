@@ -159,16 +159,15 @@ function enableSuperAPIs() {
   ///parent.client = client// figure this out later, do not reload stuff on KA
 
 
-  window.fetch = function (url) {
+  window.fetch_ = window.api = function (input) {
     return new Promise(function (resolve, reject) {
-      client.send("")
-      xhr.onload = function () {
-        resolve(xhr.response)
+      client.send("!fetch " + input)
+      client.onRecieve = function (msg) {
+        // Get everything after the second space
+        let space2Ind = msg.indexOf(" ", msg.indexOf(" ") + 1)
+        let result = msg.substr(space2Ind + 1)
+        resolve(JSON.parse(result))
       }
-      xhr.onerror = function () {
-        reject(xhr.statusText)
-      }
-      xhr.send(options.body)
     })
   }
 
