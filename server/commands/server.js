@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import { promises as fs } from "fs";
 import { timingSafeEqual } from 'crypto';
 import fetch from 'node-fetch';
-
+import { fetchProxy } from '../components/proxyAPIs';
 dotenv.config();
 
 function sanitize(str) {
@@ -55,7 +55,7 @@ export default [
   {
     name: "alert-all",
     exec: (args, p, peers) => {
-      let [ password, message ] = args.split(/ (.+)/s)
+      let [password, message] = args.split(/ (.+)/s)
       if (authenticateAdmin(password)) {
         for (let peer of peers) {
           peer.send("alert Message from server admin: " + message)
@@ -93,7 +93,7 @@ export default [
       }
       let rooms = rm.repr().rooms
       for (let room of rooms) {
-        allProjects.find(project => project.name === room.name).players.push( ...room.players )
+        allProjects.find(project => project.name === room.name).players.push(...room.players)
       }
       p.send("deno-set-projects " + JSON.stringify(allProjects.slice(0, 200)))
     }
@@ -265,7 +265,7 @@ export default [
       })
       peers.filter(p => p.ipInfo?.loc).forEach(peerData => {
         let loc = peerData.ipInfo?.loc
-        let [ lat, lng ] = loc.split(",").map(v => Math.round(parseFloat(v)))
+        let [lat, lng] = loc.split(",").map(v => Math.round(parseFloat(v)))
         let status
         if (peerData.room) {
           status = "playing"
@@ -349,19 +349,8 @@ export default [
   },
   {
     name: "get-ka-profile",
-    exec: async(args, p) => {
-      let isKaid = args.startsWith("kaid_")
-      let innerVariables = isKaid ? `\"kaid\":\"${args}\"` : `\"username\":\"${args}\"`
-      let res = await fetch("https://www.khanacademy.org/api/internal/graphql/getFullUserProfile", {
-        "headers": {
-          "content-type": "application/json",
-        },
-        "referrerPolicy": "strict-origin-when-cross-origin",
-        "body": `{\"operationName\":\"getFullUserProfile\",\"variables\":{${innerVariables}},\"query\":\"query getFullUserProfile($kaid: String, $username: String) {\\n  user(kaid: $kaid, username: $username) {\\n    id\\n    kaid\\n    key\\n    userId\\n    email\\n    username\\n    profileRoot\\n    gaUserId\\n    qualarooId\\n    isPhantom\\n    isDeveloper: hasPermission(name: \\\"can_do_what_only_admins_can_do\\\")\\n    isCurator: hasPermission(name: \\\"can_curate_tags\\\", scope: ANY_ON_CURRENT_LOCALE)\\n    isCreator: hasPermission(name: \\\"has_creator_role\\\", scope: ANY_ON_CURRENT_LOCALE)\\n    isPublisher: hasPermission(name: \\\"can_publish\\\", scope: ANY_ON_CURRENT_LOCALE)\\n    isModerator: hasPermission(name: \\\"can_moderate_users\\\", scope: GLOBAL)\\n    isParent\\n    isSatStudent\\n    isTeacher\\n    isDataCollectible\\n    isChild\\n    isOrphan\\n    isCoachingLoggedInUser\\n    canModifyCoaches\\n    nickname\\n    hideVisual\\n    joined\\n    points\\n    countVideosCompleted\\n    bio\\n    soundOn\\n    muteVideos\\n    showCaptions\\n    prefersReducedMotion\\n    noColorInVideos\\n    autocontinueOn\\n    newNotificationCount\\n    canHellban: hasPermission(name: \\\"can_ban_users\\\", scope: GLOBAL)\\n    canMessageUsers: hasPermission(name: \\\"can_send_moderator_messages\\\", scope: GLOBAL)\\n    isSelf: isActor\\n    hasStudents: hasCoachees\\n    hasClasses\\n    hasChildren\\n    hasCoach\\n    badgeCounts\\n    homepageUrl\\n    isMidsignupPhantom\\n    includesDistrictOwnedData\\n    preferredKaLocale {\\n      id\\n      kaLocale\\n      status\\n      __typename\\n    }\\n    underAgeGate {\\n      parentEmail\\n      daysUntilCutoff\\n      approvalGivenAt\\n      __typename\\n    }\\n    authEmails\\n    signupDataIfUnverified {\\n      email\\n      emailBounced\\n      __typename\\n    }\\n    pendingEmailVerifications {\\n      email\\n      unverifiedAuthEmailToken\\n      __typename\\n    }\\n    tosAccepted\\n    shouldShowAgeCheck\\n    __typename\\n  }\\n  actorIsImpersonatingUser\\n}\\n\"}`,
-        "method": "POST",
-        "mode": "cors",
-        "credentials": "include"
-      })
+    exec: async (args, p) => {
+      let res = await fetchProxy("profile", args)
       let json = await res.json()
       let user = json.data.user
       if (user === null) {
@@ -377,16 +366,7 @@ export default [
         pin: generateSignupPin(),
         loggedIn: false
       }
-      res = await fetch("https://www.khanacademy.org/api/internal/graphql/avatarDataForProfile", {
-        "headers": {
-          "content-type": "application/json",
-        },
-        "referrerPolicy": "strict-origin-when-cross-origin",
-        "body": `{\"operationName\":\"avatarDataForProfile\",\"variables\":{\"kaid\":\"${user.kaid}\"},\"query\":\"query avatarDataForProfile($kaid: String!) {\\n  user(kaid: $kaid) {\\n    id\\n    avatar {\\n      name\\n      imageSrc\\n      __typename\\n    }\\n    __typename\\n  }\\n}\\n\"}`,
-        "method": "POST",
-        "mode": "cors",
-        "credentials": "include"
-      })
+      res = await fetchProxy("avatarDataForProfile", user.kaid)
       json = await res.json()
       returnProfile.avatarSrc = json.data.user.avatar.imageSrc
       p.kaProfile = returnProfile
@@ -395,7 +375,7 @@ export default [
   },
   {
     name: "sign-up-with-bio-pin",
-    exec: async(args, p, peers, rm, fm) => {
+    exec: async (args, p, peers, rm, fm) => {
       if (p.kaProfile?.loggedIn) {
         return p.send("alert You are already logged in. Please close all KA metaverse instances and try again.") // Already logged in
       }
@@ -404,17 +384,8 @@ export default [
       }
       // No args are inputted
 
-      
-      let res = await fetch("https://www.khanacademy.org/api/internal/graphql/getFullUserProfile", {
-        "headers": {
-          "content-type": "application/json",
-        },
-        "referrerPolicy": "strict-origin-when-cross-origin",
-        "body": `{\"operationName\":\"getFullUserProfile\",\"variables\":{\"kaid\":\"${p.kaProfile?.kaid}\"},\"query\":\"query getFullUserProfile($kaid: String, $username: String) {\\n  user(kaid: $kaid, username: $username) {\\n    id\\n    kaid\\n    key\\n    userId\\n    email\\n    username\\n    profileRoot\\n    gaUserId\\n    qualarooId\\n    isPhantom\\n    isDeveloper: hasPermission(name: \\\"can_do_what_only_admins_can_do\\\")\\n    isCurator: hasPermission(name: \\\"can_curate_tags\\\", scope: ANY_ON_CURRENT_LOCALE)\\n    isCreator: hasPermission(name: \\\"has_creator_role\\\", scope: ANY_ON_CURRENT_LOCALE)\\n    isPublisher: hasPermission(name: \\\"can_publish\\\", scope: ANY_ON_CURRENT_LOCALE)\\n    isModerator: hasPermission(name: \\\"can_moderate_users\\\", scope: GLOBAL)\\n    isParent\\n    isSatStudent\\n    isTeacher\\n    isDataCollectible\\n    isChild\\n    isOrphan\\n    isCoachingLoggedInUser\\n    canModifyCoaches\\n    nickname\\n    hideVisual\\n    joined\\n    points\\n    countVideosCompleted\\n    bio\\n    soundOn\\n    muteVideos\\n    showCaptions\\n    prefersReducedMotion\\n    noColorInVideos\\n    autocontinueOn\\n    newNotificationCount\\n    canHellban: hasPermission(name: \\\"can_ban_users\\\", scope: GLOBAL)\\n    canMessageUsers: hasPermission(name: \\\"can_send_moderator_messages\\\", scope: GLOBAL)\\n    isSelf: isActor\\n    hasStudents: hasCoachees\\n    hasClasses\\n    hasChildren\\n    hasCoach\\n    badgeCounts\\n    homepageUrl\\n    isMidsignupPhantom\\n    includesDistrictOwnedData\\n    preferredKaLocale {\\n      id\\n      kaLocale\\n      status\\n      __typename\\n    }\\n    underAgeGate {\\n      parentEmail\\n      daysUntilCutoff\\n      approvalGivenAt\\n      __typename\\n    }\\n    authEmails\\n    signupDataIfUnverified {\\n      email\\n      emailBounced\\n      __typename\\n    }\\n    pendingEmailVerifications {\\n      email\\n      unverifiedAuthEmailToken\\n      __typename\\n    }\\n    tosAccepted\\n    shouldShowAgeCheck\\n    __typename\\n  }\\n  actorIsImpersonatingUser\\n}\\n\"}`,
-        "method": "POST",
-        "mode": "cors",
-        "credentials": "include"
-      })
+
+      let res = await fetchProxy("profile", p.kaProfile?.kaid)
       let json = await res.json()
       let bio = json.data.user.bio
       let pin = p.kaProfile?.pin
@@ -433,7 +404,7 @@ export default [
   },
   {
     name: "auto-login",
-    exec: async(args, p, peers, rm, fm) => {
+    exec: async (args, p, peers, rm, fm) => {
       if (p.kaProfile?.loggedIn) {
         return p.send("auto-login already") // Already logged in
       }
@@ -452,6 +423,20 @@ export default [
       }
     }
   },
+  {
+    name: "fetch",
+    exec: async (args, p, peers, rm, fm) => {
+      let firstArg = args.split(" ")[0]
+      let res = await fetchProxy(firstArg, args.slice(firstArg.length + 1))
+      if (!res.ok) {
+        p.send(`fetch ${res.status}`)
+        return
+      }
+      let json = await res.json()
+      p.send(`fetch ${res.status} ${JSON.stringify(json)}`)
+    }
+  },
+
   {
     name: "rooms",
     exec: (args, p, peers, rm, fm) => {
