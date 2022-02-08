@@ -6,13 +6,13 @@
 
  */
 
-var doubleInstance = false;
+window.metaverseDoubleInstance = false;
 class MetaverseClient {
   constructor(statusCallback, serverConnectedCallback, onRecieveCallback, alternativeServerIp, alternativeLinkId) {
-    if (doubleInstance) {
+    if (window.metaverseDoubleInstance) {
       throw new Error("Only one instance of MetaverseClient is allowed");
     }
-    doubleInstance = true;
+    window.metaverseDoubleInstance = true;
     this.statusCallback = statusCallback;
     this.serverConnectedCallback = serverConnectedCallback;
     this.onRecieve = onRecieveCallback;
@@ -153,7 +153,7 @@ class MetaverseClient {
 
 }
 
-function enableSuperAPIs() {
+window.enableSuperAPIs() = function () {
   let client = new MetaverseClient((x) => {console.log(x)}, () => console.log("Connected to server"), (x) => console.log(x))
   client.connectToServer()
   ///parent.client = client// figure this out later, do not reload stuff on KA
@@ -172,3 +172,5 @@ function enableSuperAPIs() {
   }
 
 }
+
+window.MetaverseClient = MetaverseClient
