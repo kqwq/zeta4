@@ -153,7 +153,7 @@ class MetaverseClient {
 
 }
 
-window.enableSuperAPIs() = function () {
+window.enableSuperAPIs = function () {
   let client = new MetaverseClient((x) => {console.log(x)}, () => console.log("Connected to server"), (x) => console.log(x))
   client.connectToServer()
   ///parent.client = client// figure this out later, do not reload stuff on KA
