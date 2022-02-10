@@ -273,7 +273,7 @@ export default [
       })
       let countryData = Object.keys(countryCounts).map(c => {
         return {
-          countryName: c,
+          iso2: c,
           flagUrl: findFlagUrlByIso2Code(c),
           count: countryCounts[c]
         }
