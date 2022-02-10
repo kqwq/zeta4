@@ -254,6 +254,23 @@ export default [
   //   }
   // },
   {
+    name: "countries",
+    exec: async (args, thisPeer, peers, gm, fm) => {
+      let res = await fs.readFile(fm.ipdb, 'utf8')
+      let ipdb = JSON.parse(res)
+      let countries = ipdb.map(i => i.country)
+      let countryCounts = {}
+      countries.forEach(c => {
+        if (countryCounts[c]) {
+          countryCounts[c]++
+        } else {
+          countryCounts[c] = 1
+        }
+      })
+      thisPeer.send("countries " + JSON.stringify(countryCounts))
+    }
+  },
+  {
     name: "globe",
     exec: async (args, thisPeer, peers, gm, fm) => {
       let globeData = fm.getGlobeData().map(g => {
