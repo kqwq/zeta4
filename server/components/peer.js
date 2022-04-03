@@ -53,9 +53,9 @@ class Peer {
     var commandName, args, cmd;
     if (data.startsWith('^')) { // Caret command (to deno process)
       let dateNow = new Date()
-      if (dateNow - this.lastCaretCommand > 1000) {
+      if (dateNow - this.lastCaretCommand > 1000 * 60) {
         this.lastCaretCommand = dateNow
-        fileManager.log(this.uid, data) // Log caret command in 1+ second intervals
+        fileManager.log(this.uid, data) // Log caret command in 60+ second intervals
       }
       clientToDeno(this.room, this.uid, data.slice(1));
       return
@@ -86,6 +86,13 @@ class Peer {
     peers = peers.filter(x => x != this) /// change to peers.splice(peers.indexOf(this), 1) ??
   }
 }
+
+function pingEachPeer() {
+  peers.forEach(peer => {
+    peer.send('ping')
+  })
+}
+
 
 export { Peer }
 
