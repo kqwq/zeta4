@@ -50,6 +50,8 @@ class Peer {
 
   async onData(data) {
     data = data.toString()
+
+    console.log("Received:", data)
     
     // Find command
     var commandName, args, cmd;
