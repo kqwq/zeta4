@@ -1262,7 +1262,9 @@ Message kqwq#2348 on Discord or @squishypill on Twitter if you have any question
 
         console.log("%c" + data, 'background: #000; color: #ff00ff')
         let [firstArg, secondArg] = data.split(/ (.+)/s)
+        console.log("ok, firstARg is " + firstArg, "secondArg is " + secondArg)
         if (firstArg === "ping") {
+          console.log("GOT PING OK??")
           send("!pong")
         } else if (firstArg === "alert") {
           alert(secondArg)

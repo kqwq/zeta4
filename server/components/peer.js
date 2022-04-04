@@ -98,8 +98,9 @@ function pingEachPeer() {
       console.log("Peer is still awaiting ping, disconnecting...", peers.length)
       peer?.peer?.destroy()
     } else {
+      console.log("Sending ping to peer...", peers.length)
       peer.awaitingPing = true
-      peer.send('!ping')
+      peer.send('ping')
     }
   })
 }
