@@ -37,7 +37,10 @@ export default [
   },
   {
     name: "pong",
-    exec: (args, p) => p.awaitingPing = false
+    exec: (args, p) => {
+      console.log('confirm pong recieved')
+      p.awaitingPing = false
+    }
   },
   {
     name: "server-version",
