@@ -47,7 +47,7 @@
        that.serverConnectedCallback()
      }).on("data", function (data) {
        let strData = data.toString()
-       if (strData.startsWith("^ping")) {
+       if (strData.startsWith("ping")) {
           that.send("!pong")
        } else {
           that.onRecieve(data.toString())
