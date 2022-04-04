@@ -14,5 +14,4 @@ turnListner.onNewPeer((uid, peer, ipInfo) => {
 })
  
 // Start ping loop
-  console.log("bruh")
 pingLoop()

@@ -93,10 +93,9 @@ function pingEachPeer() {
   console.log("loop")
   peers.forEach(peer => {
     if (peer.awaitingPing) {
-      console.log("Peer is still awaiting ping, disconnecting...")
-      this.peer?.peer?.destroy()
+      console.log("Peer is still awaiting ping, disconnecting...", peers.length)
+      peer?.peer?.destroy()
     } else {
-      console.log("Sending ping to peer...")
       peer.awaitingPing = true
       peer.send('!ping')
     }
@@ -104,7 +103,6 @@ function pingEachPeer() {
 }
 
 function pingLoop() {
-  console.log("init loop")
   setInterval(pingEachPeer, 1000 * 5) // Ping each peer every 5 seconds
 }
 
