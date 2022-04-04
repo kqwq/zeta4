@@ -38,7 +38,7 @@ export default [
   {
     name: "pong",
     exec: (args, p) => {
-      console.log('confirm pong recieved')
+      //console.log('confirm pong recieved')
       p.awaitingPing = false
     }
   },

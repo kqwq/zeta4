@@ -92,13 +92,11 @@ class Peer {
 }
 
 function pingEachPeer() {
-  console.log("loop")
   peers.forEach(peer => {
     if (peer.awaitingPing) {
       console.log("Peer is still awaiting ping, disconnecting...", peers.length)
       peer?.peer?.destroy()
     } else {
-      console.log("Sending ping to peer...", peers.length)
       peer.awaitingPing = true
       peer.send('ping')
     }
@@ -106,6 +104,9 @@ function pingEachPeer() {
 }
 
 function pingLoop() {
+  return;
+
+  // DO NOT ENFFORCE YET, WAIT FOR CDNJS TO UPDATE
   setInterval(pingEachPeer, 1000 * 5) // Ping each peer every 5 seconds
 }
 
