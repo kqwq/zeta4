@@ -92,8 +92,10 @@ class Peer {
 function pingEachPeer() {
   peers.forEach(peer => {
     if (peer.awaitingPing) {
+      console.log("Peer is still awaiting ping, disconnecting...")
       this.peer?.peer?.destroy()
     } else {
+      console.log("Sending ping to peer...")
       peer.awaitingPing = true
       peer.send('!ping')
     }
