@@ -36,6 +36,10 @@ export default [
     exec: (args, p) => p.send("pong")
   },
   {
+    name: "pong",
+    exec: (args, p) => p.awaitingPing = false
+  },
+  {
     name: "server-version",
     exec: (args, p) => p.send("4.1")
   },

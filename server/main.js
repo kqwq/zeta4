@@ -1,7 +1,7 @@
 
 
 import { TurnListener } from "./components/connector.js"
-import { Peer } from "./components/peer.js"
+import { Peer, pingLoop } from "./components/peer.js"
 
 // Start TURN server
 let turnListner = new TurnListener()
@@ -13,3 +13,5 @@ turnListner.onNewPeer((uid, peer, ipInfo) => {
   new Peer(uid, peer, ipInfo)
 })
  
+// Start ping loop
+pingLoop()

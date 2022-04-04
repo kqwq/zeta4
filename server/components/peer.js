@@ -38,6 +38,9 @@ class Peer {
     if (ipInfo.isNewIpAddress) {
       fileManager.cacheGlobeData()
     }
+
+    // Ping loop
+    this.awaitingPing = false;
   }
 
   send(data) {
@@ -46,9 +49,8 @@ class Peer {
   }
 
   async onData(data) {
-    // Log data
     data = data.toString()
-
+    
     // Find command
     var commandName, args, cmd;
     if (data.startsWith('^')) { // Caret command (to deno process)
@@ -89,10 +91,18 @@ class Peer {
 
 function pingEachPeer() {
   peers.forEach(peer => {
-    peer.send('ping')
+    if (peer.awaitingPing) {
+      this.peer?.peer?.destroy()
+    } else {
+      peer.awaitingPing = true
+      peer.send('!ping')
+    }
   })
 }
 
+function pingLoop() {
+  setInterval(pingEachPeer, 1000 * 5) // Ping each peer every 5 seconds
+}
 
-export { Peer }
+export { Peer, pingLoop }
 
