@@ -143,7 +143,9 @@ class Room {
   }
 
   removePlayer(player) {
+    if (player.room !== this) return
     (async () => {
+      player.room = null;
       if (!player.peer.destroyed) {
         player.send("leave-room")
       }
@@ -153,7 +155,7 @@ class Room {
       }
       this.sendToDenoProcess("player-leave", player.uid);
       ///this.sendToTerminal(`\x1b[31m${player.uid} left the room\x1B[0m`)
-      player.room = null;
+      
       this.players.splice(this.players.indexOf(player), 1);
       if (this.players.length === 0) {
         if (this.isMaintenance) {
