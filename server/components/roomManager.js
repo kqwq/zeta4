@@ -150,11 +150,14 @@ class Room {
     player.room = null;
     this.players.splice(this.players.indexOf(player), 1);
     if (this.players.length === 0) {
-      if (this.isMaintenance) {
-        player.send("deno-terminal-end 1")
-      }
-      this.killDenoProcess()
-      this.removeSelf()
+      this.sendToDenoProcess("stop-server")
+      setTimeout(() => { // Wait 1 second to send a kill command to the Deno process
+        if (this.isMaintenance) {
+          player.send("deno-terminal-end 1")
+        }
+        this.killDenoProcess()
+        this.removeSelf()
+      }, 1000)
     }
   }
 
