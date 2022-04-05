@@ -153,7 +153,7 @@ class Room {
       if (this.isMaintenance) {
         player.send("deno-terminal-end 1")
       }
-      this.killDenoProcess()
+      setInterval(() => this.killDenoProcess(), 1500)
       this.removeSelf()
     }
   }
