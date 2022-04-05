@@ -16,6 +16,8 @@ No. This project runs in the [New webpage](https://www.khanacademy.org/computer-
 ## Build
 To run an instance of the metaverse see [server/README.md](https://github.com/kqwq/zeta4/tree/master/server), however I left out a few steps so DM me on Discord if you want to get started. Check my [GitHub](https://github.com/kqwq) for contact. I'll be happy to help you out.
 
+DISCLAIMER: Please do not _actually_ run this code on Khan Academy. I am aware that this project breaks some guidelines and I am not responsible if your account is banned for this.
+
 ## Bugs
 If you find any bugs, open an issue or DM me on Discord.
 <br>
