@@ -148,10 +148,12 @@ class Room {
     this.sendToDenoProcess("player-leave", player.uid);
     ///this.sendToTerminal(`\x1b[31m${player.uid} left the room\x1B[0m`)
     player.room = null;
-    this.players.splice(this.players.indexOf(player), 1);
-    if (this.players.length === 0) {
+    if (this.players.length > 0) {
+      this.players.splice(this.players.indexOf(player), 1);
+    } else if (this.players.length === 0) {
       this.sendToDenoProcess("stop-server")
       setTimeout(() => { // Wait 1 second to send a kill command to the Deno process
+        that.players.splice(that.players.indexOf(player), 1);
         if (that.isMaintenance) {
           player.send("deno-terminal-end 1")
         }
