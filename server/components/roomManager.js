@@ -4,7 +4,6 @@ import { spawn } from "child_process";
 const hidePersonalFilename = (filename) => {
   return filename.replace(/file:\/\/\/C:\/Users\/Student\/Code\/KA2\/zeta4\/server\/deno\//g, '')
 }
-const sleep = (ms) =>  new Promise(resolve => setTimeout(resolve, ms))
 
 class Room {
   constructor(roomManager, fileManager, name, isMaintenance, players, maxPlayers) {
@@ -143,28 +142,20 @@ class Room {
   }
 
   removePlayer(player) {
-    if (player.room !== this) return
-    (async () => {
-      player.room = null;
-      if (!player.peer.destroyed) {
-        player.send("leave-room")
+    if (!player.peer.destroyed) {
+      player.send("leave-room")
+    }
+    this.sendToDenoProcess("player-leave", player.uid);
+    ///this.sendToTerminal(`\x1b[31m${player.uid} left the room\x1B[0m`)
+    player.room = null;
+    this.players.splice(this.players.indexOf(player), 1);
+    if (this.players.length === 0) {
+      if (this.isMaintenance) {
+        player.send("deno-terminal-end 1")
       }
-      if (this.players.length === 1) {
-        player.send("stop-game")
-        await sleep(1000)
-      }
-      this.sendToDenoProcess("player-leave", player.uid);
-      ///this.sendToTerminal(`\x1b[31m${player.uid} left the room\x1B[0m`)
-      
-      this.players.splice(this.players.indexOf(player), 1);
-      if (this.players.length === 0) {
-        if (this.isMaintenance) {
-          player.send("deno-terminal-end 1")
-        }
-        this.killDenoProcess()
-        this.removeSelf()
-      }
-    })()
+      this.killDenoProcess()
+      this.removeSelf()
+    }
   }
 
   removeAllPlayers() {
