@@ -152,11 +152,11 @@ class Room {
     if (this.players.length === 0) {
       this.sendToDenoProcess("stop-server")
       setTimeout(() => { // Wait 1 second to send a kill command to the Deno process
-        if (this.isMaintenance) {
+        if (that.isMaintenance) {
           player.send("deno-terminal-end 1")
         }
-        this.killDenoProcess()
-        this.removeSelf()
+        that.killDenoProcess()
+        that.removeSelf()
       }, 1000)
     }
   }
